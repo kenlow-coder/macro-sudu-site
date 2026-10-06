@@ -46,6 +46,18 @@ section{padding:88px 0} .section-head{display:flex;justify-content:space-between
 .research-links{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
 .research-link{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:#fff;border:1px solid rgba(13,74,58,.08);border-radius:14px;padding:12px 13px;transition:.16s}.research-link:hover{border-color:rgba(13,74,58,.35);transform:translateY(-1px)}.research-link b{display:block;color:var(--green);font-size:.84rem;line-height:1.25}.research-link small{display:block;color:#718078;font-size:.72rem;margin-top:3px;line-height:1.3}.research-link i{font-style:normal;color:var(--orange);font-weight:900}
 .health-source{grid-column:1/-1;color:#718078;font-size:.73rem;margin-top:3px}.health-source a{text-decoration:underline;font-weight:800;color:var(--green)}
+.product-health-grid{grid-template-columns:1fr 1fr;align-items:stretch}
+.product-health-copy{padding:38px}
+.product-health-copy h2{max-width:560px}
+.product-health-copy p{max-width:580px}
+.health-cta{position:relative;z-index:2;margin-top:8px;background:var(--gold);color:var(--green);box-shadow:none}
+.health-cta:hover{box-shadow:0 10px 26px rgba(242,179,25,.22)}
+.product-health-cards{grid-template-columns:1fr;gap:12px}
+.product-health-card{min-height:0;padding:20px;display:grid;grid-template-columns:48px 1fr;gap:15px;align-items:center;justify-content:initial}
+.product-health-card strong{margin-top:0;font-size:1.05rem}
+.product-health-card p{margin-top:4px}
+.product-health-icon{width:46px;height:46px;border-radius:14px;background:#eef3ee;display:grid;place-items:center;font-size:1.35rem}
+.product-health-source{margin-top:2px;padding:0 2px}
 .chef-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
 .chef-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px}.chef-card strong{display:block;color:var(--green);font-size:1.05rem;margin-bottom:6px}.chef-card p{font-size:.9rem;color:#65726c;margin:0}
 .meal-count-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .count-btn{border:1.5px solid rgba(13,74,58,.16);background:white;border-radius:16px;padding:14px 10px;text-align:center;cursor:pointer;color:var(--green);transition:.15s} .count-btn:hover{border-color:var(--green)} .count-btn.active{background:#eaf0eb;border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)} .count-btn strong{display:block;font-size:1.2rem} .count-extra{display:block;font-size:.68rem;font-weight:850;color:var(--orange);margin-top:2px} .count-btn .per-meal{display:block;font-size:.76rem;margin-top:3px;font-weight:800} .count-btn del{color:#89938e;margin-right:4px} .count-btn em{color:var(--orange);font-style:normal}
@@ -67,6 +79,8 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
 .portal{position:fixed;inset:0;background:rgba(7,34,26,.72);display:none;place-items:center;padding:22px;z-index:100;overflow:auto}.portal.open{display:grid}.portal-card{position:relative;width:min(620px,100%);max-height:calc(100vh - 44px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:30px;padding:32px;box-shadow:0 28px 80px rgba(7,34,26,.3)}.portal-card.wide{width:min(820px,100%)}.portal-close{position:absolute;right:18px;top:14px;border:0;background:transparent;color:var(--green);font-size:2rem;line-height:1;cursor:pointer}.portal-brand{display:flex;align-items:center;gap:8px;margin-bottom:18px}.portal-brand img:first-child{width:40px;height:40px;object-fit:contain}.portal-brand img:last-child{width:120px;height:auto}.portal-step{display:block;color:var(--orange);font-size:.72rem;font-weight:950;letter-spacing:.14em;margin-bottom:7px}.portal-card h3{font-size:clamp(1.7rem,4vw,2.45rem);line-height:1.02;letter-spacing:-.045em;color:var(--green);margin:0 32px 10px 0}.portal-card>p{color:#60706a}.portal-form{display:grid;gap:14px;margin-top:20px}.portal-form label{display:grid;gap:6px;color:var(--green);font-size:.82rem;font-weight:850}.portal-form input,.portal-form textarea,.portal-form select{width:100%;border:1.5px solid rgba(13,74,58,.2);background:#fff;border-radius:14px;padding:12px 13px;color:var(--ink);font:inherit;outline:none}.portal-form input:focus,.portal-form textarea:focus,.portal-form select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(13,74,58,.08)}.portal-submit{width:100%;margin-top:4px}.portal-terms{display:block;color:#7a857f;font-size:.72rem;margin-top:14px}.details-grid{grid-template-columns:repeat(2,1fr)}.details-grid .full{grid-column:1/-1}.order-mini{background:#edf2ed;border:1px solid rgba(13,74,58,.08);border-radius:18px;padding:14px 16px;color:#53645c;font-size:.82rem}.order-mini strong{color:var(--green)}.success-card{text-align:center}.success-icon{width:78px;margin:0 auto 16px}.success-card .portal-step{margin-top:3px}.success-card h3{margin-right:0}.plan-gate-note{margin-top:10px;padding:10px 12px;border-radius:14px;background:#fff5ec;color:#86501e;font-size:.78rem;font-weight:750}
 
 @media(max-width:980px){
+  .product-health-grid{grid-template-columns:1fr}
+
   .hero-grid,.plan-shell,.location-card,.health-grid{grid-template-columns:1fr}
   .plan-summary{position:static}
   .hero-art{min-height:470px;max-width:640px;width:100%;margin:0 auto}
@@ -128,44 +142,30 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
 <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>40% launch offer</span><span>High protein</span><span>Portion controlled</span><span>Global flavours</span><span>Heat & eat</span><span>Freshly chilled</span><span>40% launch offer</span><span>High protein</span><span>Portion controlled</span><span>Global flavours</span><span>Heat & eat</span><span>Freshly chilled</span></div></div>
 <section id="why-macro" class="health-section">
   <div class="wrap">
-    <div class="health-grid">
-      <div class="health-copy">
+    <div class="health-grid product-health-grid">
+      <div class="health-copy product-health-copy">
         <span class="eyebrow">Why Macro Sudu</span>
-        <h2>Healthy eating should be the easy choice.</h2>
-        <p>Malaysia’s latest nutrition data point to a difficult everyday food environment: too much sugar, salt and fat, too little fruit and vegetables, and more than half of adults living with overweight or obesity.</p>
-        <p>These are risk factors — not single causes — for diabetes, high blood pressure, unhealthy cholesterol levels and cardiovascular disease. Macro Sudu exists to make the better everyday choice easier: chef-cooked meals, measured portions and clear macros, delivered ready for real Malaysian routines.</p>
-        <p class="mission-note">Macro Sudu is a food business, not a medical treatment. Our aim is to support healthier eating habits and make balanced meals more accessible and convenient.</p>
+        <h2>Better meals, without the meal prep.</h2>
+        <p>Macro Sudu is built for busy routines: chef-cooked meals with measured portions, clear macros and flavours you will actually look forward to eating.</p>
+        <p>Keep them chilled, heat when you are ready, and get a balanced meal on the table in minutes — without planning, weighing ingredients or washing up a full kitchen.</p>
+        <a class="cta health-cta" href="#plans">Try Macro Sudu</a>
+        <p class="mission-note">Our meals are designed to make balanced eating more convenient. Macro Sudu is a food business, not a medical treatment.</p>
       </div>
-      <div class="health-cards">
-        <div class="health-card"><div class="stat">53.6%</div><div><strong>of Malaysian adults were overweight or obese</strong><p>NHMS 2024 Nutrition: 30.5% overweight + 23.1% obese.</p></div></div>
-        <div class="health-card"><div class="stat">59%</div><div><strong>had more than one sugar-sweetened drink per day</strong><p>NHMS 2024 found high daily SSB intake among adults.</p></div></div>
-        <div class="health-card"><div class="stat">75.9%</div><div><strong>had high sodium intake</strong><p>Average intake was about 2,892 mg sodium — roughly 7.3 g salt per day.</p></div></div>
-        <div class="health-card"><div class="stat">12.2%</div><div><strong>met the recommended vegetable intake</strong><p>Only 17.1% met the recommended fruit intake in NHMS 2024.</p></div></div>
-        <div class="ncd-strip">
-          <div class="ncd-chip"><strong>15.6%</strong><span>adult diabetes prevalence</span></div>
-          <div class="ncd-chip"><strong>33.3%</strong><span>adult hypercholesterolaemia prevalence</span></div>
-          <div class="ncd-chip"><strong>21.4%</strong><span>estimated high 10-year cardiovascular risk in a 2025 nationwide study</span></div>
+      <div class="health-cards product-health-cards">
+        <div class="health-card product-health-card">
+          <div class="product-health-icon">🍳</div>
+          <div><strong>Chef-cooked food</strong><p>Proper meals made for flavour and consistency — not bland “diet food”.</p></div>
         </div>
-        <div class="research-panel">
-          <div class="research-head"><strong>Read the Malaysian evidence</strong><span>Recent national data &amp; peer-reviewed research</span></div>
-          <div class="research-links">
-            <a class="research-link" href="https://iku.nih.gov.my/images/nhms2024/key_findings_nhms2024.pdf" target="_blank" rel="noopener"><span><b>NHMS 2024: Nutrition — Key Findings</b><small>Overweight/obesity, sugar-sweetened drinks, excess fat and physical activity.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://iku.nih.gov.my/images/nhms2024/fact_sheet_nhms2024.pdf" target="_blank" rel="noopener"><span><b>NHMS 2024: Nutrition — Fact Sheet</b><small>Sodium, fruit &amp; vegetable intake, sugar and nutrient intake.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://www.nature.com/articles/s41598-025-08311-9" target="_blank" rel="noopener"><span><b>Scientific Reports 2025 — NHMS 2023 NCD findings</b><small>Diabetes, hypertension, high cholesterol and obesity trends in Malaysia.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12333060/" target="_blank" rel="noopener"><span><b>BMC Public Health 2025 — cardiovascular risk</b><small>Nationwide study estimating high 10-year CVD risk among Malaysian adults.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://pubmed.ncbi.nlm.nih.gov/41054865/" target="_blank" rel="noopener"><span><b>2025 study — salt intake in Malaysian adults</b><small>Population-based research on salt knowledge, attitudes and practices.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://www.nature.com/articles/s41598-024-70699-7" target="_blank" rel="noopener"><span><b>Scientific Reports 2024 — Malaysian diet quality</b><small>Diet quality was poor in the Malaysia Lipid Study cohort, especially among frequent eaters-out.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://www.dosm.gov.my/portal-main/release-content/statistics-on-causes-of-death-malaysia-2025" target="_blank" rel="noopener"><span><b>DOSM 2025 — Causes of Death</b><small>Ischaemic heart disease was Malaysia’s leading medically certified cause of death in 2024.</small></span><i>↗</i></a>
-            <a class="research-link" href="https://www.bernama.com/en/news.php?id=2549258" target="_blank" rel="noopener"><span><b>Health Ministry, April 2026 — NCD prevention</b><small>MOH linked rising NCDs to unhealthy dietary habits including excess sugar and salt.</small></span><i>↗</i></a>
-          </div>
+        <div class="health-card product-health-card">
+          <div class="product-health-icon">⚖️</div>
+          <div><strong>Measured portions &amp; clear macros</strong><p>Ingredients and portions are standardised so calories, protein, carbs and fat are easy to understand.</p></div>
         </div>
-        <div class="health-source">Latest nutrition data: <a href="https://iku.nih.gov.my/nhms-2024" target="_blank" rel="noopener">Institute for Public Health — NHMS 2024</a>. NCD prevalence: <a href="https://iku.gov.my/nhms-2023" target="_blank" rel="noopener">NHMS 2023</a>.</div>
+        <div class="health-card product-health-card">
+          <div class="product-health-icon">⚡</div>
+          <div><strong>Chilled, ready when you are</strong><p>Keep your meals chilled and heat them when you need them — ideal for workdays, busy evenings and post-gym meals.</p></div>
+        </div>
+        <div class="health-source product-health-source">Balanced eating matters. For Malaysian nutrition context, see <a href="https://iku.nih.gov.my/nhms-2024" target="_blank" rel="noopener">NHMS 2024</a>.</div>
       </div>
-    </div>
-    <div class="chef-strip">
-      <div class="chef-card"><strong>Professionally cooked</strong><p>Meals are prepared by professional chefs, with flavour and consistency treated as seriously as the nutrition.</p></div>
-      <div class="chef-card"><strong>Weighed &amp; standardised</strong><p>Ingredients and portions are weighed and standardised so each dish can be produced consistently from one box to the next.</p></div>
-      <div class="chef-card"><strong>Detailed macro information</strong><p>Controlled recipes and measured portions let us calculate clear calories, protein, carbohydrate and fat information for each meal.</p></div>
     </div>
   </div>
 </section>
@@ -176,7 +176,7 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
     <div class="plan-main">
       <div class="plan-kicker"><span class="offer-dot">40% OFF</span> Launching offer applied</div>
       <h2>Create your first box</h2><p class="plan-intro">Your selected preferences help organise your experience. You can still browse every available Macro Sudu meal each week.</p>
-      <div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your protein preference</h3><p>Your preference helps us prioritise the most relevant meals first. You can still view the full Macro Sudu menu.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="meat-vegan">Meat &amp; Vegan</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegan-only">Vegan Only</button></div></div>
+      <div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your meal preference</h3><p>Choose Mixed, Meat Only or Vegetarian. You can still view the full Macro Sudu menu.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="mixed">Mixed</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegetarian">Vegetarian</button></div></div>
       <div class="plan-step"><div class="plan-step-head"><span class="step-circle">2</span><div><h3>Choose your Macro Sudu plan</h3><p>Pick the plan that best matches your protein target and menu preference. Launch prices below are per meal.</p></div></div>
         <div class="plan-tier-grid">
           <button type="button" class="plan-tier active" data-plan="standard">
@@ -199,7 +199,7 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
         <button type="button" class="count-btn" data-count="18"><strong>18 meals</strong><span class="per-meal"><del class="count-old">RM28</del> <em class="count-new">RM16.90/meal</em></span></button>
       </div></div>
     </div>
-    <aside class="plan-summary"><div class="summary-brand"><img src="assets/logos/macro-sudu-traymark.png" alt=""><img src="assets/logos/macro-sudu-wordmark.png" alt="Macro Sudu"></div><div class="launch-badge">LAUNCHING OFFER · 40% OFF</div><div class="selected-plan-label"><span>Selected plan</span><strong id="sumPlan">Standard</strong></div><div class="selected-plan-label"><span>Protein preference</span><strong id="sumPref">Meat &amp; Vegan</strong></div><div class="price-line"><span>Price per meal</span><strong><del id="sumRegularPerMeal">RM28</del> <span id="sumLaunchPerMeal">RM16.90</span></strong></div><div class="price-line"><span>Main meals (<b id="sumCount">10</b>)</span><strong id="sumOriginal">RM280.00</strong></div><div class="price-line discount"><span>Launch discount</span><strong id="sumDiscount">− RM111.00</strong></div><div class="price-line"><span>Delivery</span><strong>Calculated later</strong></div><div class="price-line total"><span>Weekly total</span><strong id="sumTotal" aria-live="polite">RM169.00</strong></div><p class="summary-note" id="summaryNote">Standard plan: chicken &amp; fish with 40g protein per meal. Launch price is RM16.90 per meal after the 40% introductory discount.</p><button type="button" class="cta summary-cta" id="chooseMealsBtn">SELECT PLAN</button></aside>
+    <aside class="plan-summary"><div class="summary-brand"><img src="assets/logos/macro-sudu-traymark.png" alt=""><img src="assets/logos/macro-sudu-wordmark.png" alt="Macro Sudu"></div><div class="launch-badge">LAUNCHING OFFER · 40% OFF</div><div class="selected-plan-label"><span>Selected plan</span><strong id="sumPlan">Standard</strong></div><div class="selected-plan-label"><span>Protein preference</span><strong id="sumPref">Mixed</strong></div><div class="price-line"><span>Price per meal</span><strong><del id="sumRegularPerMeal">RM28</del> <span id="sumLaunchPerMeal">RM16.90</span></strong></div><div class="price-line"><span>Main meals (<b id="sumCount">10</b>)</span><strong id="sumOriginal">RM280.00</strong></div><div class="price-line discount"><span>Launch discount</span><strong id="sumDiscount">− RM111.00</strong></div><div class="price-line"><span>Delivery</span><strong>Calculated later</strong></div><div class="price-line total"><span>Weekly total</span><strong id="sumTotal" aria-live="polite">RM169.00</strong></div><p class="summary-note" id="summaryNote">Standard plan: chicken &amp; fish with 40g protein per meal. Launch price is RM16.90 per meal after the 40% introductory discount.</p><button type="button" class="cta summary-cta" id="chooseMealsBtn">SELECT PLAN</button></aside>
   </div>
 </div></section>
 
@@ -367,11 +367,11 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
     highprotein:{name:'High Protein',regular:36.50,launch:21.90,description:'Seafood, salmon or beef twice per week with 50g protein per meal.'}
   };
   const PREFS={
-    'meat-vegan':'Meat & Vegan',
+    'meat-vegan':'Mixed',
     'meat-only':'Meat Only',
-    'vegan-only':'Vegan Only'
+    'vegan-only':'Vegetarian'
   };
-  let selectedPlan='standard', selectedPref='meat-vegan', targetMeals=10, selectedMeals=0, gateComplete=false;
+  let selectedPlan='standard', selectedPref='mixed', targetMeals=10, selectedMeals=0, gateComplete=false;
   const counts={};
   const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
   const money=n=>'RM'+Number(n).toFixed(2);
