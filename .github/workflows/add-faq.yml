@@ -1,0 +1,135 @@
+name: Add FAQ section
+
+on:
+  push:
+    paths:
+      - ".github/workflows/add-faq.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  add-faq:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add FAQ section
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path("index.html")
+          s = p.read_text(encoding="utf-8")
+
+          if 'id="faq"' in s:
+              print("FAQ already exists; no changes needed.")
+              raise SystemExit(0)
+
+          css = r'''
+          .faq-section{padding:86px 0;background:var(--paper);border-top:1px solid var(--line)}
+          .faq-wrap{display:grid;grid-template-columns:.78fr 1.22fr;gap:48px;align-items:start}
+          .faq-intro{position:sticky;top:110px}
+          .faq-intro h2{font-size:clamp(2.3rem,5vw,4.6rem);line-height:.94;letter-spacing:-.055em;color:var(--green);margin:12px 0 16px}
+          .faq-intro p{color:#62716a;max-width:430px}
+          .faq-list{display:grid;gap:10px}
+          .faq-item{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+          .faq-item summary{list-style:none;cursor:pointer;padding:19px 54px 19px 20px;color:var(--green);font-weight:900;position:relative}
+          .faq-item summary::-webkit-details-marker{display:none}
+          .faq-item summary:after{content:"+";position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:1.5rem;color:var(--orange);font-weight:700}
+          .faq-item[open] summary:after{content:"−"}
+          .faq-answer{padding:0 20px 20px;color:#62716a;line-height:1.65}
+          .faq-answer strong{color:var(--green)}
+          .faq-note{margin-top:15px;font-size:.78rem;color:#7a857f}
+          @media(max-width:980px){
+            .faq-wrap{grid-template-columns:1fr;gap:24px}
+            .faq-intro{position:static}
+          }
+          '''
+
+          faq = r'''
+          <section class="faq-section" id="faq">
+            <div class="wrap faq-wrap">
+              <div class="faq-intro">
+                <span class="eyebrow">FAQ</span>
+                <h2>Questions before your first box?</h2>
+                <p>Here are the things customers usually want to know about Macro Sudu meals, storage, macros and ordering.</p>
+              </div>
+              <div class="faq-list">
+                <details class="faq-item" open>
+                  <summary>Are Macro Sudu meals halal?</summary>
+                  <div class="faq-answer">Yes. Our meals are made using <strong>halal ingredients</strong> and we intend to operate halal from day one. We are <strong>not yet JAKIM halal-certified</strong>, and we are currently working towards obtaining formal halal certification.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>Are the meals fresh or frozen?</summary>
+                  <div class="faq-answer">Macro Sudu meals are prepared as <strong>chilled ready meals</strong>, not frozen. Keep them refrigerated between <strong>0–5°C</strong> and follow the use-by information on the packaging.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>How do I heat the meals?</summary>
+                  <div class="faq-answer">They are designed to be convenient and microwave-ready. Follow the heating instructions on the meal packaging and make sure the food is heated thoroughly before eating.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>How accurate are the calories and macros?</summary>
+                  <div class="faq-answer">Our recipes use <strong>measured ingredients and standardised portions</strong> so we can provide clear calories, protein, carbohydrate and fat information for each meal. Small natural variations can still occur between portions.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>Can I choose exactly which meals go into my box?</summary>
+                  <div class="faq-answer">Yes. After choosing your meal preference, plan and box size, you can select the meals you want from the available menu and repeat favourites if you like.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>What meal preferences are available?</summary>
+                  <div class="faq-answer">You can choose <strong>Balanced, Meat Only or Vegetarian</strong>. Your preference helps organise the menu experience, while meal availability may vary from week to week.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>How many meals can I order?</summary>
+                  <div class="faq-answer">Current box sizes are <strong>6, 8, 10, 12, 15 or 18 meals</strong>. Smaller boxes have a small per-meal surcharge, while boxes of 10 meals or more use the standard plan rate shown on the website.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>What if I have a food allergy?</summary>
+                  <div class="faq-answer">Please tell us about any allergies when placing your order. If you have a severe allergy, contact us before ordering so we can advise you appropriately. We do not currently claim that our kitchen is allergen-free.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>Can I customise ingredients or change the macros of an individual meal?</summary>
+                  <div class="faq-answer">Not at the moment. We use standardised recipes and portions so the meals stay consistent and the displayed macro information remains meaningful.</div>
+                </details>
+
+                <details class="faq-item">
+                  <summary>Where does Macro Sudu deliver?</summary>
+                  <div class="faq-answer">We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.</div>
+                </details>
+
+                <p class="faq-note">Have another question? We can keep expanding this section as Macro Sudu launches and more customer questions come in.</p>
+              </div>
+            </div>
+          </section>
+          '''
+
+          if "</style>" not in s:
+              raise RuntimeError("Could not find closing style tag")
+          if "</main>" not in s:
+              raise RuntimeError("Could not find closing main tag")
+
+          s = s.replace("</style>", css + "\n</style>", 1)
+          s = s.replace("</main>", faq + "\n</main>", 1)
+
+          p.write_text(s, encoding="utf-8")
+          PY
+
+      - name: Commit FAQ
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add FAQ section"
+            git push
+          fi
