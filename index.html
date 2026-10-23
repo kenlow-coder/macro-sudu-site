@@ -188,7 +188,7 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
     <div class="plan-main">
       <div class="plan-kicker"><span class="offer-dot">40% OFF</span> Launching offer applied</div>
       <h2>Create your first box</h2><p class="plan-intro">Your selected preferences help organise your experience. You can still browse every available Macro Sudu meal each week.</p>
-      <div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your meal preference</h3><p>Choose Mixed, Meat Only or Vegetarian. You can still view the full Macro Sudu menu.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="mixed">Mixed</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegetarian">Vegetarian</button></div></div>
+      <div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your meal preference</h3><p>Choose Balanced, Meat Only or Vegetarian. You can still view the full Macro Sudu menu.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="balanced">Balanced</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegetarian">Vegetarian</button></div></div>
       <div class="plan-step"><div class="plan-step-head"><span class="step-circle">2</span><div><h3>Choose your Macro Sudu plan</h3><p>Pick the plan that best matches your protein target and menu preference. Launch prices below are per meal.</p></div></div>
         <div class="plan-tier-grid">
           <button type="button" class="plan-tier active" data-plan="standard">
@@ -409,11 +409,11 @@ footer{background:#0a3429;color:white;padding:54px 0 28px;margin-top:86px} .foot
     highprotein:{name:'High Protein',regular:36.50,launch:21.90,description:'Seafood, salmon or beef twice per week with 50g protein per meal.'}
   };
   const PREFS={
-    'mixed':'Mixed',
+    'balanced':'Balanced',
     'meat-only':'Meat Only',
     'vegetarian':'Vegetarian'
   };
-  let selectedPlan='standard', selectedPref='mixed', targetMeals=10, selectedMeals=0, gateComplete=false;
+  let selectedPlan='standard', selectedPref='balanced', targetMeals=10, selectedMeals=0, gateComplete=false;
   const counts={};
   const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
   const money=n=>'RM'+Number(n).toFixed(2);
