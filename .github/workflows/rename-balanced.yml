@@ -1,0 +1,43 @@
+name: Rename meal preference to Balanced
+
+on:
+  push:
+    paths:
+      - ".github/workflows/rename-balanced.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update meal preference wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          s = p.read_text(encoding="utf-8")
+          replacements = [
+              ('data-pref="mixed"', 'data-pref="balanced"'),
+              ('>Mixed</button>', '>Balanced</button>'),
+              ("'mixed':'Mixed'", "'balanced':'Balanced'"),
+              ("selectedPref='mixed'", "selectedPref='balanced'"),
+              ('Choose Mixed, Meat Only or Vegetarian.', 'Choose Balanced, Meat Only or Vegetarian.'),
+          ]
+          for old, new in replacements:
+              s = s.replace(old, new)
+          p.write_text(s, encoding="utf-8")
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Rename Mixed meal preference to Balanced"
+            git push
+          fi
