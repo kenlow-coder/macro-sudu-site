@@ -5,6 +5,10 @@ src = Path("index.html")
 out = Path("sudu-sprout/index.html")
 out.parent.mkdir(parents=True, exist_ok=True)
 s = src.read_text(encoding="utf-8")
+emblem_b64 = Path("assets/brand/sudu-sprout-emblem.b64").read_text(encoding="ascii").strip()
+wordmark_b64 = Path("assets/brand/sudu-sprout-wordmark.b64").read_text(encoding="ascii").strip()
+emblem_uri = "data:image/png;base64," + emblem_b64
+wordmark_uri = "data:image/png;base64," + wordmark_b64
 
 s = s.replace("Macro Sudu", "Sudu & Sprout")
 s = s.replace("macroSuduDraft", "suduSproutDraft")
@@ -19,6 +23,15 @@ s = re.sub(r'<div class="announcement">.*?</div>','<div class="announcement">CHE
 
 brand_css = r'''
 .ss-lockup{display:flex;align-items:center;gap:9px;min-width:0}
+.ss-emblem-img{display:block;object-fit:contain;flex:0 0 auto;width:42px;height:42px}
+.ss-wordmark-img{display:block;object-fit:contain;object-position:left center;width:178px;height:auto}
+.ss-lockup.compact .ss-emblem-img{width:36px;height:36px}
+.ss-lockup.compact .ss-wordmark-img{width:155px}
+.ss-lockup.large .ss-emblem-img{width:62px;height:62px}
+.ss-lockup.large .ss-wordmark-img{width:220px}
+.hero-mark .ss-emblem-img{width:48px;height:48px}
+.cta-logo.ss-emblem-img{width:76px;height:76px}
+.success-icon.ss-emblem-img{width:78px;height:78px;margin:0 auto 16px}
 .ss-round{position:relative;display:inline-grid;place-items:center;flex:0 0 auto;width:42px;height:42px;border:2px solid var(--orange);border-radius:50%;background:#fff8ed;color:var(--orange);font:800 17px/1 Georgia,"Times New Roman",serif;letter-spacing:-.08em}
 .ss-round:before,.ss-round:after{content:"";position:absolute;background:var(--green);border-radius:100% 0 100% 0}
 .ss-round:before{width:7px;height:15px;left:8px;bottom:6px;transform:rotate(-34deg)}
@@ -37,21 +50,21 @@ h1,.section-head h2,.health-copy h2,.plan-main>h2,.location-card h2,.cta-panel h
 '''
 s=s.replace("</style>",brand_css+"\n</style>",1)
 
-lockup='<span class="ss-lockup"><span class="ss-round">SS</span><span class="ss-wordmark">Sudu<span class="amp">&amp;</span>Sprout<span class="leaf"></span></span></span>'
-compact='<span class="ss-lockup compact"><span class="ss-round">SS</span><span class="ss-wordmark">Sudu<span class="amp">&amp;</span>Sprout<span class="leaf"></span></span></span>'
-large='<span class="ss-lockup large"><span class="ss-round">SS</span><span class="ss-wordmark">Sudu<span class="amp">&amp;</span>Sprout<span class="leaf"></span></span></span>'
+lockup=f'<span class="ss-lockup"><img class="ss-emblem-img" src="{emblem_uri}" alt=""><img class="ss-wordmark-img" src="{wordmark_uri}" alt="Sudu &amp; Sprout"></span>'
+compact=f'<span class="ss-lockup compact"><img class="ss-emblem-img" src="{emblem_uri}" alt=""><img class="ss-wordmark-img" src="{wordmark_uri}" alt="Sudu &amp; Sprout"></span>'
+large=f'<span class="ss-lockup large"><img class="ss-emblem-img" src="{emblem_uri}" alt=""><img class="ss-wordmark-img" src="{wordmark_uri}" alt="Sudu &amp; Sprout"></span>'
 
 s=re.sub(r'<a class="brand" href="#top" aria-label="[^"]* home">.*?</a>','<a class="brand" href="#top" aria-label="Sudu &amp; Sprout home">'+lockup+'</a>',s,count=1,flags=re.S)
-s=re.sub(r'<div class="hero-mark">.*?</div>','<div class="hero-mark"><span class="ss-round">SS</span></div>',s,count=1,flags=re.S)
+s=re.sub(r'<div class="hero-mark">.*?</div>',f'<div class="hero-mark"><img class="ss-emblem-img" src="{emblem_uri}" alt=""></div>',s,count=1,flags=re.S)
 s=re.sub(r'<div class="summary-brand">.*?</div>','<div class="summary-brand">'+compact+'</div>',s,count=1,flags=re.S)
 s=re.sub(r'<div class="brand-lockup-inner">.*?</div>','<div class="brand-lockup-inner">'+large+'</div>',s,count=1,flags=re.S)
 s=re.sub(r'<div class="location-visual"><img[^>]*></div>','<div class="location-visual">'+large+'</div>',s,count=1,flags=re.S)
-s=re.sub(r'<img class="cta-logo"[^>]*>','<span class="ss-round">SS</span>',s)
+s=re.sub(r'<img class="cta-logo"[^>]*>',f'<img class="cta-logo ss-emblem-img" src="{emblem_uri}" alt="Sudu &amp; Sprout">',s)
 s=re.sub(r'<a class="footer-lockup" href="#top">.*?</a>','<a class="footer-lockup" href="#top">'+large+'</a>',s,count=1,flags=re.S)
 s=re.sub(r'<div class="portal-brand">.*?</div>','<div class="portal-brand">'+compact+'</div>',s,flags=re.S)
-s=re.sub(r'<img class="success-icon"[^>]*>','<span class="ss-round" style="width:78px;height:78px;font-size:28px;margin:0 auto 16px">SS</span>',s)
+s=re.sub(r'<img class="success-icon"[^>]*>',f'<img class="success-icon ss-emblem-img" src="{emblem_uri}" alt="Sudu &amp; Sprout">',s)
 
-favicon='<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2228%22 fill=%22%23fff8ed%22 stroke=%22%23d8491b%22 stroke-width=%223%22/%3E%3Ctext x=%2232%22 y=%2240%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 font-weight=%22700%22 fill=%22%23d8491b%22%3ESS%3C/text%3E%3C/svg%3E">'
+favicon=f'<link rel="icon" type="image/png" href="{emblem_uri}">'
 s=re.sub(r'<link rel="icon"[^>]*>',favicon,s,count=1) if re.search(r'<link rel="icon"[^>]*>',s) else s.replace("</title>","</title>"+favicon,1)
 
 s=s.replace('<span class="eyebrow">Eat well, every day</span>','<span class="eyebrow">Good food fuels a brighter you</span>',1)
