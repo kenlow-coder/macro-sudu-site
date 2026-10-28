@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Build Sudu & Sprout site
+        run: python build_sudu_sprout.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
