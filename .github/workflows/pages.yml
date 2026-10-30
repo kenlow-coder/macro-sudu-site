@@ -1,6 +1,8 @@
-name: Deploy static site to GitHub Pages
+name: Deploy private placeholder
 
 on:
+  push:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -19,16 +21,32 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build Sudu & Sprout site
-        run: python build_sudu_sprout.py
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v4
+      - name: Build private placeholder
+        run: |
+          mkdir -p public
+          cat > public/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta name="robots" content="noindex,nofollow,noarchive">
+            <title>Sudu & Sprout | Private Preview</title>
+            <style>
+              body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fff8ed;color:#244b35;font-family:Arial,sans-serif}
+              main{max-width:560px;padding:48px 28px;text-align:center}
+              h1{font-family:Georgia,serif;font-size:2.1rem;margin:0 0 14px}
+              p{line-height:1.6;color:#5b6d63}
+            </style>
+          </head>
+          <body><main><h1>Sudu & Sprout</h1><p>Private preview. This website has not launched yet.</p></main></body>
+          </html>
+          HTML
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
-      - name: Deploy to GitHub Pages
+          path: "public"
+      - name: Deploy private placeholder
         id: deployment
         uses: actions/deploy-pages@v4
