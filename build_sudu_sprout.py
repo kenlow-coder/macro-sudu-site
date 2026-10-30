@@ -7,6 +7,7 @@ out.parent.mkdir(parents=True, exist_ok=True)
 s = src.read_text(encoding="utf-8")
 emblem_b64 = Path("assets/brand/sudu-sprout-emblem.b64").read_text(encoding="ascii").strip()
 wordmark_b64 = Path("assets/brand/sudu-sprout-wordmark.b64").read_text(encoding="ascii").strip()
+favicon_b64 = Path("assets/brand/sudu-sprout-favicon.b64").read_text(encoding="ascii").strip()
 emblem_uri = "data:image/png;base64," + emblem_b64
 wordmark_uri = "data:image/png;base64," + wordmark_b64
 
@@ -64,7 +65,8 @@ s=re.sub(r'<a class="footer-lockup" href="#top">.*?</a>','<a class="footer-locku
 s=re.sub(r'<div class="portal-brand">.*?</div>','<div class="portal-brand">'+compact+'</div>',s,flags=re.S)
 s=re.sub(r'<img class="success-icon"[^>]*>',f'<img class="success-icon ss-emblem-img" src="{emblem_uri}" alt="Sudu &amp; Sprout">',s)
 
-favicon=f'<link rel="icon" type="image/png" href="{emblem_uri}">'
+favicon_uri=f"data:image/png;base64,{favicon_b64}"
+favicon=f'<link rel="icon" type="image/png" sizes="64x64" href="{favicon_uri}">'
 s=re.sub(r'<link rel="icon"[^>]*>',favicon,s,count=1) if re.search(r'<link rel="icon"[^>]*>',s) else s.replace("</title>","</title>"+favicon,1)
 
 s=s.replace('<span class="eyebrow">Eat well, every day</span>','<span class="eyebrow">Good food fuels a brighter you</span>',1)
