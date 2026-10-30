@@ -461,7 +461,9 @@ address_js = r'''
   postcode.addEventListener('input', queue);
   address.addEventListener('focus', () => {
     if (box.childElementCount) box.classList.add('open');
+    else queue();
   });
+  postcode.addEventListener('focus', queue);
   document.addEventListener('click', e => {
     if (!e.target.closest('.address-autocomplete-wrap')) hide();
   });
