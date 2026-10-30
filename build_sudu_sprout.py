@@ -97,7 +97,10 @@ s=re.sub(
     '<a href="#plans">Build your box</a>'
     '<a href="mailto:sudusprout@gmail.com">Email us</a>'
     '<a href="https://www.instagram.com/sudusprout/" target="_blank" rel="noopener">Instagram @sudusprout</a>'
+    '<a href="https://www.facebook.com/profile.php?id=61595074215241" target="_blank" rel="noopener">Facebook</a>'
+    '<a href="https://xhslink.cn/m/532Djq1OS01" target="_blank" rel="noopener">Xiaohongshu / RedNote</a>'
     '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp us</a>'
+    '<a href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">Join WhatsApp Community</a>'
     '<a href="#faq">FAQ</a></div>',
     s,count=1,flags=re.S
 )
