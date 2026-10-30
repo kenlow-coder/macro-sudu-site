@@ -1,0 +1,22 @@
+name: Validate development site
+
+on:
+  push:
+    branches: ["development"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Sudu & Sprout
+        run: python build_sudu_sprout.py
+      - name: Verify checkout additions
+        run: |
+          grep -q 'id="detailsAddress"' sudu-sprout/index.html
+          grep -q 'id="addressSuggestions"' sudu-sprout/index.html
+          grep -q 'photon.komoot.io' sudu-sprout/index.html
+          grep -q 'SAVE ORDER DETAILS' sudu-sprout/index.html
