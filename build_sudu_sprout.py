@@ -160,6 +160,122 @@ s=s.replace(
     '<div class="full" style="padding:12px 14px;border:1px solid rgba(36,75,53,.14);border-radius:14px;background:#fff8ed;color:#50635a;font-size:.8rem;line-height:1.5"><strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.</div><button class="cta portal-submit full" type="submit">SAVE ORDER DETAILS</button>'
 )
 
+
+# Connect the final customer-details form to the production Supabase backend.
+old_submit = r'''  $('#detailsForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const data=Object.fromEntries(new FormData(e.currentTarget).entries());
+    data.preference=PREFS[selectedPref];
+    data.plan=currentPlan().name;
+    data.mealCount=targetMeals;
+    data.pricePerMeal=effectiveLaunch();
+    data.total=targetMeals*effectiveLaunch();
+    data.meals=Object.entries(counts).filter(([,qty])=>qty>0).map(([name,qty])=>({name,qty}));
+    data.savedAt=new Date().toISOString();
+    try{localStorage.setItem('macroSuduOrderDraft',JSON.stringify(data));}catch(err){}
+    closePortal('detailsPortal');
+    $('#successText').textContent='Thanks, '+data.name+'. Your '+data.plan+' box with '+data.mealCount+' meals has been saved in this browser as a prototype order draft.';
+    openPortal('successPortal');
+  });'''
+
+new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const form=e.currentTarget;
+    if(form.dataset.submitting==='1') return;
+
+    const data=Object.fromEntries(new FormData(form).entries());
+    const meals=Object.entries(counts).filter(([,qty])=>qty>0).map(([name,qty])=>({meal_name:name,quantity:qty}));
+    const mealSubtotal=targetMeals*effectiveLaunch();
+    const payload={
+      full_name:data.name,
+      email:data.email,
+      phone:data.phone,
+      age:Number(data.age),
+      weight_kg:Number(data.weight),
+      address:data.address,
+      postcode:data.postcode,
+      delivery_area:data.deliveryArea,
+      delivery_day:data.deliveryDay,
+      plan:currentPlan().name,
+      meal_preference:PREFS[selectedPref],
+      meals_per_week:targetMeals,
+      meal_subtotal:mealSubtotal,
+      items:meals,
+      allergies:data.allergies,
+      source:data.source,
+      main_goal:data.mainGoal,
+      marketing_consent:false,
+      query_string:window.location.search
+    };
+
+    const button=form.querySelector('.portal-submit');
+    let errorBox=document.getElementById('orderSaveError');
+    if(!errorBox){
+      errorBox=document.createElement('div');
+      errorBox.id='orderSaveError';
+      errorBox.className='full';
+      errorBox.style.cssText='display:none;padding:11px 13px;border:1px solid rgba(180,45,35,.25);border-radius:12px;background:#fff2ef;color:#8a2d22;font-size:.82rem;line-height:1.45';
+      form.insertBefore(errorBox,button);
+    }
+
+    const originalText=button.textContent;
+    form.dataset.submitting='1';
+    button.disabled=true;
+    button.textContent='SAVING ORDER...';
+    errorBox.style.display='none';
+
+    try{
+      const response=await fetch('https://cahoocydfiujuelkrqqf.supabase.co/functions/v1/create-subscription-order',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok || !result.ok) throw new Error(result.error||'Could not save your order. Please try again.');
+
+      const saved={
+        ...data,
+        preference:PREFS[selectedPref],
+        plan:currentPlan().name,
+        mealCount:targetMeals,
+        pricePerMeal:effectiveLaunch(),
+        mealSubtotal:result.meal_subtotal,
+        deliveryFee:result.delivery_fee,
+        total:result.total_amount,
+        deliveryQuoteRequired:Boolean(result.delivery_quote_required),
+        meals:meals.map(x=>({name:x.meal_name,qty:x.quantity})),
+        orderNumber:result.order_number,
+        savedAt:new Date().toISOString()
+      };
+      try{localStorage.setItem('suduSproutOrderDraft',JSON.stringify(saved));}catch(err){}
+
+      closePortal('detailsPortal');
+      const quoteNote=result.delivery_quote_required?' Your delivery fee will be confirmed with you before payment.':'';
+      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received.'+quoteNote;
+      openPortal('successPortal');
+    }catch(err){
+      errorBox.textContent=err instanceof Error?err.message:'Could not save your order. Please try again.';
+      errorBox.style.display='block';
+    }finally{
+      form.dataset.submitting='';
+      button.disabled=false;
+      button.textContent=originalText;
+    }
+  });'''
+
+if old_submit not in s:
+    raise RuntimeError("Could not find the customer-details submit handler")
+s=s.replace(old_submit,new_submit,1)
+
+s=s.replace(
+    'Prototype note: this demo stores the completed order in this browser only. Connect this form to Google Forms/Sheets or your live checkout before launch.',
+    'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.'
+)
+s=s.replace(
+    'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken in this prototype.',
+    'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken at this step.'
+)
+
 delivery_js = r'''
 <script>
 (() => {
