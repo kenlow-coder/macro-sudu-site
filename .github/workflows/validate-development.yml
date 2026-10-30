@@ -20,3 +20,8 @@ jobs:
           grep -q 'id="addressSuggestions"' sudu-sprout/index.html
           grep -q 'photon.komoot.io' sudu-sprout/index.html
           grep -q 'SAVE ORDER DETAILS' sudu-sprout/index.html
+      - name: Upload private preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: sudu-sprout-private-preview
+          path: sudu-sprout
