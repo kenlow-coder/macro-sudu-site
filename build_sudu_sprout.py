@@ -108,13 +108,8 @@ s=re.sub(
 # Add recurring delivery preferences and customer research fields.
 delivery_fields = '''
       <label class="full">Delivery area
-        <select name="deliveryArea" id="deliveryArea" required>
-          <option value="">Select one</option>
-          <option value="Kepong">Kepong — Free delivery</option>
-          <option value="Sungai Buloh">Sungai Buloh — RM5 / meal</option>
-          <option value="Bangsar">Bangsar — RM5 / meal</option>
-          <option value="Other KL">Other KL — delivery fee confirmed before payment</option>
-        </select>
+        <input name="deliveryArea" id="deliveryArea" readonly value="Enter postcode to check coverage">
+        <small id="deliveryCoverage" class="address-help">We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.</small>
       </label>
       <label class="full">Preferred weekly delivery day
         <select name="deliveryDay" id="deliveryDay" required>
@@ -123,7 +118,7 @@ delivery_fields = '''
           <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
         </select>
       </label>
-      <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Select delivery area"></label>
+      <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Enter postcode"></label>
       <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
 '''
 s=re.sub(
@@ -300,15 +295,78 @@ s=s.replace(
     'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken at this step.'
 )
 
+
+# Validate postcode coverage at the first checkout gate.
+old_start_submit = r'''  $('#startForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    gateComplete=true;
+    $('#detailsEmail').value=$('#startEmail').value.trim();
+    $('#detailsPostcode').value=$('#startPostcode').value.trim();
+    closePortal('startPortal');
+    $('#menu').scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>$('#menu').classList.add('menu-ready'),250);
+  });'''
+
+new_start_submit = r'''  $('#startForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const form=e.currentTarget;
+    const postcode=$('#startPostcode').value.trim().replace(/\D/g,'');
+    const coverage={
+      '52000':'Kepong','52100':'Kepong','52200':'Kepong',
+      '47000':'Sungai Buloh',
+      '59000':'Bangsar','59100':'Bangsar','59200':'Bangsar'
+    };
+    let coverageError=document.getElementById('startCoverageError');
+    if(!coverageError){
+      coverageError=document.createElement('div');
+      coverageError.id='startCoverageError';
+      coverageError.style.cssText='display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(180,45,35,.25);border-radius:12px;background:#fff2ef;color:#8a2d22;font-size:.8rem;line-height:1.45';
+      form.appendChild(coverageError);
+    }
+    if(!coverage[postcode]){
+      coverageError.textContent=postcode.length===5
+        ? 'Sorry, we do not deliver to postcode '+postcode+' yet. We currently cover selected postcodes in Kepong, Sungai Buloh and Bangsar.'
+        : 'Please enter a valid 5-digit postcode.';
+      coverageError.style.display='block';
+      gateComplete=false;
+      return;
+    }
+    coverageError.style.display='none';
+    gateComplete=true;
+    $('#detailsEmail').value=$('#startEmail').value.trim();
+    $('#detailsPostcode').value=postcode;
+    $('#detailsPostcode').dispatchEvent(new Event('input',{bubbles:true}));
+    closePortal('startPortal');
+    $('#menu').scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>$('#menu').classList.add('menu-ready'),250);
+  });'''
+
+if old_start_submit not in s:
+    raise RuntimeError("Could not find start-form submit handler")
+s=s.replace(old_start_submit,new_start_submit,1)
+
 delivery_js = r'''
 <script>
 (() => {
   const area = document.getElementById('deliveryArea');
+  const coverage = document.getElementById('deliveryCoverage');
+  const postcode = document.getElementById('detailsPostcode');
   const feeField = document.getElementById('deliveryFee');
   const totalField = document.getElementById('estimatedTotal');
   const mealTotal = document.getElementById('sumTotal');
   const countEl = document.getElementById('sumCount');
-  if (!area || !feeField || !totalField) return;
+  const form = document.getElementById('detailsForm');
+  if (!area || !postcode || !feeField || !totalField) return;
+
+  const COVERAGE = {
+    '52000': {area:'Kepong', fee:0},
+    '52100': {area:'Kepong', fee:0},
+    '52200': {area:'Kepong', fee:0},
+    '47000': {area:'Sungai Buloh', fee:5},
+    '59000': {area:'Bangsar', fee:5},
+    '59100': {area:'Bangsar', fee:5},
+    '59200': {area:'Bangsar', fee:5}
+  };
 
   const parseRM = value => {
     const n = Number(String(value || '').replace(/[^0-9.]/g,''));
@@ -317,27 +375,62 @@ delivery_js = r'''
   const money = n => 'RM' + Number(n).toFixed(2);
 
   function updateDeliveryEstimate(){
+    const pc = String(postcode.value || '').replace(/\D/g,'').slice(0,5);
+    if (postcode.value !== pc) postcode.value = pc;
+    const zone = COVERAGE[pc];
     const count = Number((countEl && countEl.textContent) || 0);
     const subtotal = parseRM(mealTotal && mealTotal.textContent);
-    let fee = 0;
-    let quoted = false;
+    const submit = form && form.querySelector('.portal-submit');
 
-    if (area.value === 'Sungai Buloh' || area.value === 'Bangsar') fee = count * 5;
-    else if (area.value === 'Other KL') quoted = true;
-
-    if (!area.value){
-      feeField.value = 'Select delivery area';
+    if (!pc){
+      area.value = 'Enter postcode to check coverage';
+      feeField.value = 'Enter postcode';
       totalField.value = '—';
-    } else if (quoted){
-      feeField.value = 'To be confirmed';
-      totalField.value = money(subtotal) + ' + delivery';
-    } else {
-      feeField.value = money(fee);
-      totalField.value = money(subtotal + fee);
+      if(coverage){
+        coverage.textContent='We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.';
+        coverage.style.color='#718078';
+      }
+      if(submit) submit.disabled=false;
+      return;
     }
+
+    if (pc.length < 5){
+      area.value = 'Checking postcode…';
+      feeField.value = '—';
+      totalField.value = '—';
+      if(coverage){
+        coverage.textContent='Enter the full 5-digit postcode.';
+        coverage.style.color='#718078';
+      }
+      if(submit) submit.disabled=true;
+      return;
+    }
+
+    if (!zone){
+      area.value = 'Not covered yet';
+      feeField.value = 'Not available';
+      totalField.value = '—';
+      if(coverage){
+        coverage.textContent='Sorry, we do not deliver to postcode '+pc+' yet.';
+        coverage.style.color='#8a2d22';
+      }
+      if(submit) submit.disabled=true;
+      return;
+    }
+
+    area.value = zone.area;
+    const fee = zone.fee * count;
+    feeField.value = money(fee);
+    totalField.value = money(subtotal + fee);
+    if(coverage){
+      coverage.textContent='✓ '+zone.area+' is covered for delivery.';
+      coverage.style.color='#244b35';
+    }
+    if(submit) submit.disabled=false;
   }
 
-  area.addEventListener('change', updateDeliveryEstimate);
+  postcode.addEventListener('input', updateDeliveryEstimate);
+  postcode.addEventListener('change', updateDeliveryEstimate);
   document.addEventListener('click', e => {
     if (e.target.closest('#chooseMealsBtn,#continueBtn,.count-btn,.plan-tier')) {
       setTimeout(updateDeliveryEstimate, 0);
