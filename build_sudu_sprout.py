@@ -154,6 +154,30 @@ s=re.sub(
     s,count=1,flags=re.S
 )
 
+# Add Malaysia address autocomplete to the delivery details form.
+address_css = r'''
+.address-autocomplete-wrap{position:relative}
+.address-suggestions{position:absolute;left:0;right:0;top:calc(100% - 18px);z-index:40;display:none;max-height:230px;overflow:auto;background:#fff;border:1px solid rgba(36,75,53,.18);border-radius:12px;box-shadow:0 16px 40px rgba(25,48,34,.16)}
+.address-suggestions.open{display:block}
+.address-suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(36,75,53,.08);background:#fff;text-align:left;padding:11px 12px;color:#203329;cursor:pointer;font:inherit;line-height:1.35}
+.address-suggestion:last-child{border-bottom:0}
+.address-suggestion:hover,.address-suggestion:focus{background:#fff8ed;outline:none}
+.address-suggestion strong{display:block;font-size:.86rem;color:#244b35}
+.address-suggestion span{display:block;margin-top:2px;font-size:.74rem;color:#6f7d75}
+.address-help{display:block;margin-top:6px;font-size:.72rem;color:#718078;line-height:1.35}
+'''
+s=s.replace("</style>",address_css+"\n</style>",1)
+
+old_address = '<label class="full">Delivery address<textarea name="address" rows="3" autocomplete="street-address" required></textarea></label>'
+new_address = '''<label class="full address-autocomplete-wrap">Delivery address
+        <textarea name="address" id="detailsAddress" rows="3" autocomplete="off" aria-autocomplete="list" aria-controls="addressSuggestions" placeholder="Start with house number, street or postcode" required></textarea>
+        <div class="address-suggestions" id="addressSuggestions" role="listbox" aria-label="Address suggestions"></div>
+        <small class="address-help">Start typing a house number, road name or postcode. Select a suggestion to fill the address and postcode.</small>
+      </label>'''
+if old_address not in s:
+    raise RuntimeError("Could not find delivery address field")
+s=s.replace(old_address,new_address,1)
+
 # Clarify subscription / delivery rules while payment backend is being connected.
 s=s.replace(
     '<button class="cta portal-submit full" type="submit">SAVE CUSTOMER DETAILS</button>',
@@ -324,7 +348,132 @@ delivery_js = r'''
 })();
 </script>
 '''
-s=s.replace('</body>',delivery_js+'\n</body>',1)
+address_js = r'''
+<script>
+(() => {
+  const address = document.getElementById('detailsAddress');
+  const postcode = document.getElementById('detailsPostcode');
+  const box = document.getElementById('addressSuggestions');
+  if (!address || !postcode || !box) return;
+
+  let timer = null;
+  let controller = null;
+
+  const clean = value => String(value || '').trim();
+  const parts = p => [
+    p.housenumber,
+    p.street || p.name,
+    p.district,
+    p.city || p.county,
+    p.state,
+    p.postcode
+  ].filter(Boolean).map(clean);
+
+  const uniqueParts = list => {
+    const seen = new Set();
+    return list.filter(value => {
+      const key = value.toLowerCase();
+      if (!value || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const hide = () => {
+    box.classList.remove('open');
+    box.replaceChildren();
+  };
+
+  const selectFeature = feature => {
+    const p = feature.properties || {};
+    const values = uniqueParts(parts(p));
+    const pc = clean(p.postcode);
+    address.value = values.join(', ');
+    if (pc) postcode.value = pc;
+    hide();
+    address.dispatchEvent(new Event('change', {bubbles:true}));
+    postcode.dispatchEvent(new Event('change', {bubbles:true}));
+  };
+
+  const render = features => {
+    hide();
+    const malaysia = features.filter(f => {
+      const cc = clean(f?.properties?.countrycode).toLowerCase();
+      const country = clean(f?.properties?.country).toLowerCase();
+      return !cc || cc === 'my' || country === 'malaysia';
+    }).slice(0,6);
+
+    if (!malaysia.length) return;
+
+    malaysia.forEach(feature => {
+      const p = feature.properties || {};
+      const line = uniqueParts(parts(p)).join(', ');
+      if (!line) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'address-suggestion';
+      button.setAttribute('role','option');
+
+      const main = document.createElement('strong');
+      main.textContent = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || line;
+      const sub = document.createElement('span');
+      sub.textContent = line + (p.country ? ', ' + p.country : '');
+
+      button.append(main, sub);
+      button.addEventListener('click', () => selectFeature(feature));
+      box.appendChild(button);
+    });
+
+    if (box.childElementCount) box.classList.add('open');
+  };
+
+  async function searchAddress(){
+    const a = clean(address.value);
+    const pc = clean(postcode.value);
+    const query = [a, pc, 'Malaysia'].filter(Boolean).join(', ');
+    if ((a + pc).replace(/\s/g,'').length < 3) {
+      hide();
+      return;
+    }
+
+    if (controller) controller.abort();
+    controller = new AbortController();
+
+    try {
+      const url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query) +
+        '&limit=8&lang=en&bbox=99.5,0.5,119.5,7.5';
+      const response = await fetch(url, {signal:controller.signal, headers:{'Accept':'application/json'}});
+      if (!response.ok) throw new Error('Address lookup unavailable');
+      const data = await response.json();
+      render(Array.isArray(data.features) ? data.features : []);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      hide();
+    }
+  }
+
+  const queue = () => {
+    clearTimeout(timer);
+    timer = setTimeout(searchAddress, 320);
+  };
+
+  address.addEventListener('input', queue);
+  postcode.addEventListener('input', queue);
+  address.addEventListener('focus', () => {
+    if (box.childElementCount) box.classList.add('open');
+    else queue();
+  });
+  postcode.addEventListener('focus', queue);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.address-autocomplete-wrap')) hide();
+  });
+  address.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hide();
+  });
+})();
+</script>
+'''
+s=s.replace('</body>',delivery_js+'\n'+address_js+'\n</body>',1)
 
 if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
