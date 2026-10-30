@@ -90,7 +90,122 @@ if '<a href="#faq">FAQ</a>' not in s:
 
 s=s.replace("Professionally cooked, macro-measured meals designed to make healthier everyday eating easier in Kuala Lumpur.","Chef-cooked, macro-measured chilled meals designed to make balanced everyday eating easier.")
 s=s.replace("© 2026 Sudu & Sprout · Operated by Sudu & Sprout Enterprise","© 2026 Sudu & Sprout · Sudu & Sprout Enterprise")
-s=s.replace('<a href="mailto:hello@example.com">Contact us</a>','<a href="#faq">FAQ</a>')
+# Customer contact / social links
+s=re.sub(
+    r'<div class="footer-col"><strong>Customer</strong>.*?</div>',
+    '<div class="footer-col"><strong>Customer</strong>'
+    '<a href="#plans">Build your box</a>'
+    '<a href="mailto:sudusprout@gmail.com">Email us</a>'
+    '<a href="https://www.instagram.com/sudusprout/" target="_blank" rel="noopener">Instagram @sudusprout</a>'
+    '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp us</a>'
+    '<a href="#faq">FAQ</a></div>',
+    s,count=1,flags=re.S
+)
+
+# Add recurring delivery preferences and customer research fields.
+delivery_fields = '''
+      <label class="full">Delivery area
+        <select name="deliveryArea" id="deliveryArea" required>
+          <option value="">Select one</option>
+          <option value="Kepong">Kepong — Free delivery</option>
+          <option value="Sungai Buloh">Sungai Buloh — RM5 / meal</option>
+          <option value="Bangsar">Bangsar — RM5 / meal</option>
+          <option value="Other KL">Other KL — delivery fee confirmed before payment</option>
+        </select>
+      </label>
+      <label class="full">Preferred weekly delivery day
+        <select name="deliveryDay" id="deliveryDay" required>
+          <option value="">Select one</option>
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+      </label>
+      <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Select delivery area"></label>
+      <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
+'''
+s=re.sub(
+    r'(<label>Postcode<input name="postcode" id="detailsPostcode" autocomplete="postal-code" required></label>)',
+    r'\1'+delivery_fields,
+    s,count=1
+)
+
+goal_field = '''
+      <label class="full">What is your main goal for subscribing?
+        <select name="mainGoal" required>
+          <option value="">Select one</option>
+          <option>Save time / avoid meal prep</option>
+          <option>Eat more balanced meals</option>
+          <option>Hit my daily protein target</option>
+          <option>Build or maintain muscle</option>
+          <option>Lose body fat / manage weight</option>
+          <option>Track calories and macros more easily</option>
+          <option>Convenient meals for work</option>
+          <option>Support an active lifestyle</option>
+          <option>Other</option>
+        </select>
+      </label>
+'''
+s=re.sub(
+    r'(<label class="full">Where did you hear about us\?.*?</label>)',
+    r'\1'+goal_field,
+    s,count=1,flags=re.S
+)
+
+# Clarify subscription / delivery rules while payment backend is being connected.
+s=s.replace(
+    '<button class="cta portal-submit full" type="submit">SAVE CUSTOMER DETAILS</button>',
+    '<div class="full" style="padding:12px 14px;border:1px solid rgba(36,75,53,.14);border-radius:14px;background:#fff8ed;color:#50635a;font-size:.8rem;line-height:1.5"><strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.</div><button class="cta portal-submit full" type="submit">SAVE ORDER DETAILS</button>'
+)
+
+delivery_js = r'''
+<script>
+(() => {
+  const area = document.getElementById('deliveryArea');
+  const feeField = document.getElementById('deliveryFee');
+  const totalField = document.getElementById('estimatedTotal');
+  const mealTotal = document.getElementById('sumTotal');
+  const countEl = document.getElementById('sumCount');
+  if (!area || !feeField || !totalField) return;
+
+  const parseRM = value => {
+    const n = Number(String(value || '').replace(/[^0-9.]/g,''));
+    return Number.isFinite(n) ? n : 0;
+  };
+  const money = n => 'RM' + Number(n).toFixed(2);
+
+  function updateDeliveryEstimate(){
+    const count = Number((countEl && countEl.textContent) || 0);
+    const subtotal = parseRM(mealTotal && mealTotal.textContent);
+    let fee = 0;
+    let quoted = false;
+
+    if (area.value === 'Sungai Buloh' || area.value === 'Bangsar') fee = count * 5;
+    else if (area.value === 'Other KL') quoted = true;
+
+    if (!area.value){
+      feeField.value = 'Select delivery area';
+      totalField.value = '—';
+    } else if (quoted){
+      feeField.value = 'To be confirmed';
+      totalField.value = money(subtotal) + ' + delivery';
+    } else {
+      feeField.value = money(fee);
+      totalField.value = money(subtotal + fee);
+    }
+  }
+
+  area.addEventListener('change', updateDeliveryEstimate);
+  document.addEventListener('click', e => {
+    if (e.target.closest('#chooseMealsBtn,#continueBtn,.count-btn,.plan-tier')) {
+      setTimeout(updateDeliveryEstimate, 0);
+    }
+  });
+  if (mealTotal) new MutationObserver(updateDeliveryEstimate).observe(mealTotal,{childList:true,characterData:true,subtree:true});
+  updateDeliveryEstimate();
+})();
+</script>
+'''
+s=s.replace('</body>',delivery_js+'\n</body>',1)
 
 if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
