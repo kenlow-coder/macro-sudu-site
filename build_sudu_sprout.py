@@ -98,18 +98,16 @@ if '<a href="#faq">FAQ</a>' not in s:
 
 s=s.replace("Professionally cooked, macro-measured meals designed to make healthier everyday eating easier in Kuala Lumpur.","Chef-cooked, macro-measured chilled meals designed to make balanced everyday eating easier.")
 s=s.replace("© 2026 Sudu & Sprout · Operated by Sudu & Sprout Enterprise","© 2026 Sudu & Sprout · Sudu & Sprout Enterprise")
-# Customer contact / social links
+# Keep the Customer footer focused on ordering and support.
 s=re.sub(
     r'<div class="footer-col"><strong>Customer</strong>.*?</div>',
     '<div class="footer-col"><strong>Customer</strong>'
-    '<a href="#plans">Build your box</a>'
-    '<a href="mailto:sudusprout@gmail.com">Email us</a>'
-    '<a href="https://www.instagram.com/sudusprout/" target="_blank" rel="noopener">Instagram @sudusprout</a>'
-    '<a href="https://www.facebook.com/profile.php?id=61595074215241" target="_blank" rel="noopener">Facebook</a>'
-    '<a href="https://xhslink.cn/m/532Djq1OS01" target="_blank" rel="noopener">Xiaohongshu / RedNote</a>'
-    '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp us</a>'
-    '<a href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">Join WhatsApp Community</a>'
-    '<a href="#faq">FAQ</a></div>',
+    '<a href="#plans">Order meals</a>'
+    '<a href="#delivery">Delivery information</a>'
+    '<a href="#faq">Frequently asked questions</a>'
+    '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp support</a>'
+    '<a href="mailto:sudusprout@gmail.com">Email support</a>'
+    '</div>',
     s,count=1,flags=re.S
 )
 
