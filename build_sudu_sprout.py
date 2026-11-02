@@ -603,6 +603,62 @@ address_js = r'''
 '''
 s=s.replace('</body>',delivery_js+'\n'+address_js+'\n</body>',1)
 
+# Add a second checkout CTA at the bottom of the meal menu.
+menu_checkout_js = r'''
+<style>
+.menu-bottom-checkout{margin:28px auto 0;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+.menu-bottom-checkout .cta{min-width:220px;min-height:50px;font-size:.92rem}
+.menu-bottom-checkout .cta:disabled{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none}
+.menu-bottom-checkout small{color:#69766f;font-size:.78rem}
+@media(max-width:640px){.menu-bottom-checkout .cta{width:100%;min-height:52px}}
+</style>
+<script>
+(() => {
+  const menu=document.getElementById('menu');
+  const grid=menu && menu.querySelector('.menu-grid');
+  const primary=document.getElementById('continueBtn');
+  if(!menu || !grid || !primary || document.getElementById('menuCheckoutBottom')) return;
+
+  const wrap=document.createElement('div');
+  wrap.className='menu-bottom-checkout';
+
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='cta';
+  button.id='menuCheckoutBottom';
+  button.textContent='CHECKOUT';
+
+  const note=document.createElement('small');
+  note.id='menuCheckoutBottomNote';
+
+  wrap.append(button,note);
+  grid.insertAdjacentElement('afterend',wrap);
+
+  const sync=()=>{
+    button.disabled=primary.disabled;
+    const progress=document.getElementById('boxProgress');
+    note.textContent=primary.disabled
+      ? 'Complete your box ('+(progress ? progress.textContent : '')+') to continue.'
+      : 'Your box is ready — continue to customer details and payment.';
+  };
+
+  button.addEventListener('click',()=>{
+    if(primary.disabled){
+      primary.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    primary.click();
+  });
+
+  new MutationObserver(sync).observe(primary,{attributes:true,attributeFilter:['disabled']});
+  const progress=document.getElementById('boxProgress');
+  if(progress) new MutationObserver(sync).observe(progress,{childList:true,characterData:true,subtree:true});
+  sync();
+})();
+</script>
+'''
+s=s.replace('</body>',menu_checkout_js+'\n</body>',1)
+
 # Launch-readiness cleanup: remove placeholders, make manual payment clear,
 # align delivery messaging, and prevent unavailable options from being ordered.
 s=re.sub(r'<section class="reviews" id="reviews">.*?</section>\s*','',s,count=1,flags=re.S)
