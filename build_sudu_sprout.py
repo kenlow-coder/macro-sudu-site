@@ -597,10 +597,90 @@ address_js = r'''
 '''
 s=s.replace('</body>',delivery_js+'\n'+address_js+'\n</body>',1)
 
+# Launch-readiness cleanup: remove placeholders, make manual payment clear,
+# align delivery messaging, and prevent unavailable options from being ordered.
+s=re.sub(r'<section class="reviews" id="reviews">.*?</section>\s*','',s,count=1,flags=re.S)
+
+s=s.replace(
+    'Choose a plan, fill your box, then send us your customer details. The ordering flow can later be connected to payment when the full website goes live.',
+    'Choose your meals, submit your details, then pay by bank transfer. Once paid, send your receipt to us on WhatsApp for verification.'
+)
+s=s.replace('BOX SAVED','ORDER RECEIVED')
+s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order has been received.')
+
+s=s.replace(
+    '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
+    '<strong style="color:#244b35">Weekly meal plan:</strong> no automatic payment is taken. For now, each week is confirmed manually by bank transfer. Meal selections close at 6:00 PM two days before your chosen delivery day.'
+)
+s=s.replace(
+    'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
+    'Your order is saved when you submit this form. Complete the bank transfer afterwards and send your receipt by WhatsApp; your payment remains pending until we verify it.'
+)
+
+s=s.replace(
+    'Currently focused on Kepong, with wider KL and Central Selangor expansion planned.',
+    'Currently delivering to selected postcodes in Kepong, Sungai Buloh and Bangsar.'
+)
+s=s.replace(
+    '<p>We are currently focused on Kepong. Kuala Lumpur and Central Selangor are planned next as we expand our delivery coverage.</p><span class="pill">Kepong · current</span><span class="pill">Kuala Lumpur · soon</span><span class="pill">Central Selangor · soon</span>',
+    '<p>We currently deliver to selected postcodes in Kepong, Sungai Buloh and Bangsar. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
+)
+s=s.replace(
+    'We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.',
+    'We currently deliver to selected postcodes in <strong>Kepong, Sungai Buloh and Bangsar</strong>. Enter your postcode at checkout to confirm coverage and the applicable delivery fee.'
+)
+
+s=s.replace(
+    '<p>Choose Balanced, Meat Only or Vegetarian. You can still view the full Sudu & Sprout menu.</p>',
+    '<p>Choose Balanced or Meat Only for the current launch menu. Vegetarian is coming later.</p>'
+)
+s=s.replace(
+    '<button type="button" class="option-btn pref" data-pref="vegetarian">Vegetarian</button>',
+    '<button type="button" class="option-btn pref" data-pref="vegetarian" disabled aria-disabled="true" title="Coming later">Vegetarian · Coming later</button>'
+)
+
+s=s.replace(
+    "<span class=\"tier-name\">Standard</span><span class=\"tier-desc\">Chicken &amp; fish · 40g protein per meal</span>",
+    "<span class=\"tier-name\">Standard</span><span class=\"tier-desc\">Current launch menu · chicken-based meals</span>"
+)
+s=s.replace(
+    '<button type="button" class="plan-tier" data-plan="signature">',
+    '<button type="button" class="plan-tier" data-plan="signature" disabled aria-disabled="true" title="Coming later">'
+)
+s=s.replace(
+    '<span class="tier-name">Signature</span><span class="tier-desc">Seafood, salmon or beef twice per week · 40g protein per meal</span>',
+    '<span class="tier-name">Signature · Coming later</span><span class="tier-desc">Future premium menu with seafood, salmon or beef</span>'
+)
+s=s.replace(
+    '<button type="button" class="plan-tier" data-plan="highprotein">',
+    '<button type="button" class="plan-tier" data-plan="highprotein" disabled aria-disabled="true" title="Coming later">'
+)
+s=s.replace(
+    '<span class="tier-name">High Protein</span><span class="tier-desc">Seafood, salmon or beef twice per week · 50g protein per meal</span>',
+    '<span class="tier-name">High Protein · Coming later</span><span class="tier-desc">Future higher-protein premium menu</span>'
+)
+s=s.replace(
+    'Each meal shows the full macro breakdown. Your per-meal price follows the Standard, Signature or High Protein plan selected above.',
+    'Each meal shows the full macro breakdown. The current launch menu is available on the Standard plan.'
+)
+s=s.replace(
+    "standard:{name:'Standard',regular:28.00,launch:16.90,description:'Chicken & fish with 40g protein per meal.'}",
+    "standard:{name:'Standard',regular:28.00,launch:16.90,description:'Current launch menu with chicken-based meals.'}"
+)
+
+# Subtle disabled-state styling for options that are not yet orderable.
+s=s.replace(
+    '</style>',
+    '.option-btn:disabled,.plan-tier:disabled{opacity:.52;cursor:not-allowed;filter:saturate(.55);box-shadow:none}.option-btn:disabled:hover,.plan-tier:disabled:hover{transform:none}\\n</style>',
+    1
+)
+
 if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
-for req in ["Balanced","Meat Only","Vegetarian","Halal ingredients","Sudu & Sprout"]:
+for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","ordering flow can later be connected to payment"]:
+    if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
 print("Built",out,out.stat().st_size)
