@@ -774,6 +774,29 @@ s=s.replace(
     1
 )
 
+# Add a consistent meal-plan CTA to every major content section except the plan selector itself.
+section_cta_css = r'''
+<style>
+.section-plan-cta{display:flex;justify-content:center;margin-top:28px;padding:0 18px}
+.section-plan-cta .cta{min-width:220px;text-decoration:none}
+.benefits .section-plan-cta .cta,.health-section .section-plan-cta .cta{background:#fff8ed;color:#244b35;box-shadow:0 10px 28px rgba(0,0,0,.12)}
+@media(max-width:640px){.section-plan-cta{margin-top:22px;padding:0}.section-plan-cta .cta{width:100%;min-height:50px}}
+</style>
+'''
+s=s.replace('</head>',section_cta_css+'\n</head>',1)
+
+def add_plan_cta(match):
+    opening = match.group(1)
+    body = match.group(2)
+    if 'id="plans"' in opening or "id='plans'" in opening:
+        return match.group(0)
+    if 'section-plan-cta' in body:
+        return match.group(0)
+    cta = '<div class="section-plan-cta"><a class="cta" href="#plans">CHOOSE YOUR MEAL PLAN</a></div>'
+    return opening + body + cta + '</section>'
+
+s=re.sub(r'(<section\b[^>]*>)(.*?)</section>', add_plan_cta, s, flags=re.S)
+
 if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
