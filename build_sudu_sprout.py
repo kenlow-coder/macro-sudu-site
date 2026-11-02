@@ -8,6 +8,7 @@ s = src.read_text(encoding="utf-8")
 emblem_b64 = Path("assets/brand/sudu-sprout-emblem.b64").read_text(encoding="ascii").strip()
 wordmark_b64 = Path("assets/brand/sudu-sprout-wordmark.b64").read_text(encoding="ascii").strip()
 favicon_b64 = Path("assets/brand/sudu-sprout-favicon.b64").read_text(encoding="ascii").strip()
+favicon_ico_b64 = Path("assets/brand/sudu-sprout-favicon-ico.b64").read_text(encoding="ascii").strip()
 emblem_uri = "data:image/png;base64," + emblem_b64
 wordmark_uri = "data:image/png;base64," + wordmark_b64
 
@@ -66,7 +67,12 @@ s=re.sub(r'<div class="portal-brand">.*?</div>','<div class="portal-brand">'+com
 s=re.sub(r'<img class="success-icon"[^>]*>',f'<img class="success-icon ss-emblem-img" src="{emblem_uri}" alt="Sudu &amp; Sprout">',s)
 
 favicon_uri=f"data:image/png;base64,{favicon_b64}"
-favicon=f'<link rel="icon" type="image/png" sizes="64x64" href="{favicon_uri}">'
+favicon_ico_uri=f"data:image/x-icon;base64,{favicon_ico_b64}"
+favicon=(
+    f'<link rel="icon" type="image/png" sizes="64x64" href="{favicon_uri}">'
+    f'<link rel="shortcut icon" type="image/x-icon" href="{favicon_ico_uri}">'
+    f'<link rel="apple-touch-icon" href="{favicon_uri}">'
+)
 s=re.sub(r'<link rel="icon"[^>]*>',favicon,s,count=1) if re.search(r'<link rel="icon"[^>]*>',s) else s.replace("</title>","</title>"+favicon,1)
 
 s=s.replace('<span class="eyebrow">Eat well, every day</span>','<span class="eyebrow">Good food fuels a brighter you</span>',1)
@@ -610,7 +616,7 @@ s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order
 
 s=s.replace(
     '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
-    '<strong style="color:#244b35">Weekly meal plan:</strong> no automatic payment is taken. For now, each week is confirmed manually by bank transfer. Meal selections close at 6:00 PM two days before your chosen delivery day.'
+    '<strong style="color:#244b35">Weekly meal plan:</strong> we currently deliver every day, Monday to Sunday. Choose your preferred delivery day below. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
 )
 s=s.replace(
     'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
@@ -639,34 +645,6 @@ s=s.replace(
     '<button type="button" class="option-btn pref" data-pref="vegetarian" disabled aria-disabled="true" title="Coming later">Vegetarian · Coming later</button>'
 )
 
-s=s.replace(
-    "<span class=\"tier-name\">Standard</span><span class=\"tier-desc\">Chicken &amp; fish · 40g protein per meal</span>",
-    "<span class=\"tier-name\">Standard</span><span class=\"tier-desc\">Current launch menu · chicken-based meals</span>"
-)
-s=s.replace(
-    '<button type="button" class="plan-tier" data-plan="signature">',
-    '<button type="button" class="plan-tier" data-plan="signature" disabled aria-disabled="true" title="Coming later">'
-)
-s=s.replace(
-    '<span class="tier-name">Signature</span><span class="tier-desc">Seafood, salmon or beef twice per week · 40g protein per meal</span>',
-    '<span class="tier-name">Signature · Coming later</span><span class="tier-desc">Future premium menu with seafood, salmon or beef</span>'
-)
-s=s.replace(
-    '<button type="button" class="plan-tier" data-plan="highprotein">',
-    '<button type="button" class="plan-tier" data-plan="highprotein" disabled aria-disabled="true" title="Coming later">'
-)
-s=s.replace(
-    '<span class="tier-name">High Protein</span><span class="tier-desc">Seafood, salmon or beef twice per week · 50g protein per meal</span>',
-    '<span class="tier-name">High Protein · Coming later</span><span class="tier-desc">Future higher-protein premium menu</span>'
-)
-s=s.replace(
-    'Each meal shows the full macro breakdown. Your per-meal price follows the Standard, Signature or High Protein plan selected above.',
-    'Each meal shows the full macro breakdown. The current launch menu is available on the Standard plan.'
-)
-s=s.replace(
-    "standard:{name:'Standard',regular:28.00,launch:16.90,description:'Chicken & fish with 40g protein per meal.'}",
-    "standard:{name:'Standard',regular:28.00,launch:16.90,description:'Current launch menu with chicken-based meals.'}"
-)
 
 # Subtle disabled-state styling for options that are not yet orderable.
 s=s.replace(
@@ -679,7 +657,7 @@ if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
-for banned in ["Sample review 01","prototype order draft","auto-renews each week","ordering flow can later be connected to payment"]:
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
