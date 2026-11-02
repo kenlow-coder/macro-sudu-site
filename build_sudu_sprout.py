@@ -97,6 +97,12 @@ if '<a href="#faq">FAQ</a>' not in s:
     s=s.replace('<a href="#delivery">Delivery</a><a class="cta"','<a href="#delivery">Delivery</a><a href="#faq">FAQ</a><a class="cta"',1)
 
 s=s.replace("Professionally cooked, macro-measured meals designed to make healthier everyday eating easier in Kuala Lumpur.","Chef-cooked, macro-measured chilled meals designed to make balanced everyday eating easier.")
+# Use clear customisation language in the plan section.
+s=s.replace(
+    '<span class="eyebrow">Build your box</span><h2>Create your weekly Sudu & Sprout meal plan.</h2>',
+    '<span class="eyebrow">Your meal plan</span><h2>Customise your weekly Sudu & Sprout meal plan.</h2>'
+)
+s=s.replace('<h2>Create your first box</h2>','<h2>Customise your meal plan</h2>')
 s=s.replace("© 2026 Sudu & Sprout · Operated by Sudu & Sprout Enterprise","© 2026 Sudu & Sprout · Sudu & Sprout Enterprise")
 # Make the footer labels clear and keep social channels visible.
 s=re.sub(
