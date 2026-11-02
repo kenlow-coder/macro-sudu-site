@@ -806,6 +806,8 @@ def add_plan_cta(match):
     body = match.group(2)
     if 'id="plans"' in opening or "id='plans'" in opening:
         return match.group(0)
+    if '<span class="eyebrow">Get started</span>' in body:
+        return match.group(0)
     if 'section-plan-cta' in body:
         return match.group(0)
 
