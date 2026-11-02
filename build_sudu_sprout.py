@@ -119,12 +119,13 @@ delivery_fields = '''
         <input name="deliveryArea" id="deliveryArea" readonly value="Enter postcode to check coverage">
         <small id="deliveryCoverage" class="address-help">We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.</small>
       </label>
-      <label class="full">Preferred weekly delivery day
+      <label class="full">Preferred weekly delivery day · morning delivery
         <select name="deliveryDay" id="deliveryDay" required>
           <option value="">Select one</option>
           <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
           <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
         </select>
+        <small id="deliveryTiming" class="address-help">We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, two calendar days before delivery.</small>
       </label>
       <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Enter postcode"></label>
       <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
@@ -184,7 +185,7 @@ s=s.replace(old_address,new_address,1)
 # Clarify subscription / delivery rules while payment backend is being connected.
 s=s.replace(
     '<button class="cta portal-submit full" type="submit">SAVE CUSTOMER DETAILS</button>',
-    '<div class="full" style="padding:12px 14px;border:1px solid rgba(36,75,53,.14);border-radius:14px;background:#fff8ed;color:#50635a;font-size:.8rem;line-height:1.5"><strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.</div><button class="cta portal-submit full" type="submit">SAVE ORDER DETAILS</button>'
+    '<div class="full" style="padding:12px 14px;border:1px solid rgba(36,75,53,.14);border-radius:14px;background:#fff8ed;color:#50635a;font-size:.8rem;line-height:1.5"><strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.</div><button class="cta portal-submit full" type="submit">PLACE ORDER &amp; VIEW PAYMENT DETAILS</button>'
 )
 
 
@@ -272,13 +273,18 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
         deliveryQuoteRequired:Boolean(result.delivery_quote_required),
         meals:meals.map(x=>({name:x.meal_name,qty:x.quantity})),
         orderNumber:result.order_number,
+        deliveryDate:result.delivery_date,
+        cutoffAt:result.cutoff_at,
         savedAt:new Date().toISOString()
       };
       try{localStorage.setItem('suduSproutOrderDraft',JSON.stringify(saved));}catch(err){}
 
       closePortal('detailsPortal');
       const quoteNote=result.delivery_quote_required?' Your delivery fee will be confirmed with you before payment.':'';
-      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received.'+quoteNote;
+      const deliveryDateText=result.delivery_date
+        ? new Intl.DateTimeFormat('en-MY',{weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'}).format(new Date(result.delivery_date+'T08:00:00+08:00'))
+        : data.deliveryDay;
+      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received. Your first morning delivery is '+deliveryDateText+'.'+quoteNote;
 
       const successPortal=$('#successPortal');
       if(successPortal){
@@ -391,7 +397,60 @@ delivery_js = r'''
   const mealTotal = document.getElementById('sumTotal');
   const countEl = document.getElementById('sumCount');
   const form = document.getElementById('detailsForm');
+  const deliveryDay = document.getElementById('deliveryDay');
+  const deliveryTiming = document.getElementById('deliveryTiming');
   if (!area || !postcode || !feeField || !totalField) return;
+
+  const DAY_INDEX = {Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
+
+  function malaysiaTodayParts(){
+    const parts = new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(new Date());
+    const o={};
+    parts.forEach(p=>{ if(p.type!=='literal') o[p.type]=p.value; });
+    return {year:Number(o.year),month:Number(o.month),day:Number(o.day)};
+  }
+
+  function dateStringUTC(d){
+    return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+  }
+
+  function nextEligibleDelivery(dayName){
+    const target=DAY_INDEX[dayName];
+    if(target===undefined) return null;
+    const p=malaysiaTodayParts();
+    const base=Date.UTC(p.year,p.month-1,p.day);
+    for(let offset=0;offset<=14;offset++){
+      const candidate=new Date(base+offset*86400000);
+      if(candidate.getUTCDay()!==target) continue;
+      const ds=dateStringUTC(candidate);
+      const cutoff=new Date(ds+'T18:00:00+08:00');
+      cutoff.setTime(cutoff.getTime()-2*86400000);
+      if(Date.now()<=cutoff.getTime()) return {date:ds,cutoff};
+    }
+    return null;
+  }
+
+  function updateDeliveryTiming(){
+    if(!deliveryTiming || !deliveryDay) return;
+    if(!deliveryDay.value){
+      deliveryTiming.textContent='We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, two calendar days before delivery.';
+      return;
+    }
+    const slot=nextEligibleDelivery(deliveryDay.value);
+    if(!slot){
+      deliveryTiming.textContent='Please choose another delivery day.';
+      return;
+    }
+    const dateText=new Intl.DateTimeFormat('en-MY',{
+      weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'
+    }).format(new Date(slot.date+'T08:00:00+08:00'));
+    const cutoffText=new Intl.DateTimeFormat('en-MY',{
+      weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'
+    }).format(slot.cutoff);
+    deliveryTiming.textContent='Next available morning delivery: '+dateText+' · order cutoff: '+cutoffText+'.';
+  }
 
   const COVERAGE = {
     '52000': {area:'Kepong', fee:0},
@@ -466,6 +525,7 @@ delivery_js = r'''
 
   postcode.addEventListener('input', updateDeliveryEstimate);
   postcode.addEventListener('change', updateDeliveryEstimate);
+  if(deliveryDay) deliveryDay.addEventListener('change', updateDeliveryTiming);
   document.addEventListener('click', e => {
     if (e.target.closest('#chooseMealsBtn,#continueBtn,.count-btn,.plan-tier')) {
       setTimeout(updateDeliveryEstimate, 0);
@@ -473,6 +533,7 @@ delivery_js = r'''
   });
   if (mealTotal) new MutationObserver(updateDeliveryEstimate).observe(mealTotal,{childList:true,characterData:true,subtree:true});
   updateDeliveryEstimate();
+  updateDeliveryTiming();
 })();
 </script>
 '''
@@ -672,7 +733,7 @@ s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order
 
 s=s.replace(
     '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
-    '<strong style="color:#244b35">Weekly meal plan:</strong> we currently deliver every day, Monday to Sunday. Choose your preferred delivery day below. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
+    '<strong style="color:#244b35">Weekly meal plan:</strong> we deliver every morning, Monday to Sunday. Orders close at 6:00 PM, two calendar days before delivery. If this week\'s cutoff has passed, your first delivery automatically moves to the same weekday next week. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
 )
 s=s.replace(
     'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
@@ -685,7 +746,7 @@ s=s.replace(
 )
 s=s.replace(
     '<p>We are currently focused on Kepong. Kuala Lumpur and Central Selangor are planned next as we expand our delivery coverage.</p><span class="pill">Kepong · current</span><span class="pill">Kuala Lumpur · soon</span><span class="pill">Central Selangor · soon</span>',
-    '<p>We currently deliver to selected postcodes in Kepong, Sungai Buloh and Bangsar. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
+    '<p>We deliver fresh chilled meals every morning, Monday to Sunday, to selected postcodes in Kepong, Sungai Buloh and Bangsar. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
 )
 s=s.replace(
     'We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.',
