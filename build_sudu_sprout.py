@@ -273,6 +273,33 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
       closePortal('detailsPortal');
       const quoteNote=result.delivery_quote_required?' Your delivery fee will be confirmed with you before payment.':'';
       $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received.'+quoteNote;
+
+      const successPortal=$('#successPortal');
+      if(successPortal){
+        let payBox=document.getElementById('bankTransferBox');
+        if(!payBox){
+          payBox=document.createElement('div');
+          payBox.id='bankTransferBox';
+          payBox.style.cssText='margin:18px 0 8px;padding:18px;border:1px solid rgba(36,75,53,.18);border-radius:16px;background:#fffaf2;text-align:left;line-height:1.55';
+          const successText=$('#successText');
+          if(successText) successText.insertAdjacentElement('afterend',payBox);
+        }
+        const amount='RM'+Number(result.total_amount||0).toFixed(2);
+        const orderRef=String(result.order_number||'');
+        const waMessage='Hi Sudu & Sprout, I have made payment for order '+orderRef+' ('+amount+'). I will attach my payment receipt here.';
+        payBox.innerHTML=
+          '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
+          '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
+          '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
+            '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
+            '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
+            '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
+            '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
+            '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
+          '</div>'+
+          '<a href="https://wa.me/60109131129?text='+encodeURIComponent(waMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">I\'VE PAID — WHATSAPP RECEIPT</a>'+
+          '<div style="font-size:.76rem;color:#6a746c;margin-top:10px;text-align:center">Prefer cash? WhatsApp us first to arrange payment before delivery.</div>';
+      }
       openPortal('successPortal');
     }catch(err){
       errorBox.textContent=err instanceof Error?err.message:'Could not save your order. Please try again.';
@@ -294,7 +321,7 @@ s=s.replace(
 )
 s=s.replace(
     'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken in this prototype.',
-    'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken at this step.'
+    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted.'
 )
 
 
