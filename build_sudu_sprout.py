@@ -752,7 +752,7 @@ s=s.replace(
 )
 s=s.replace(
     '<p>We are currently focused on Kepong. Kuala Lumpur and Central Selangor are planned next as we expand our delivery coverage.</p><span class="pill">Kepong · current</span><span class="pill">Kuala Lumpur · soon</span><span class="pill">Central Selangor · soon</span>',
-    '<p>We deliver fresh chilled meals every morning, Monday to Sunday, to selected postcodes in Kepong, Sungai Buloh and Bangsar. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
+    '<p>We deliver fresh chilled meals every morning, Monday to Sunday, to selected postcodes in Kepong, Sungai Buloh and Bangsar. Orders close at 6:00 PM, three calendar days before delivery. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
 )
 s=s.replace(
     'We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.',
