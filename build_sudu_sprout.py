@@ -98,17 +98,27 @@ if '<a href="#faq">FAQ</a>' not in s:
 
 s=s.replace("Professionally cooked, macro-measured meals designed to make healthier everyday eating easier in Kuala Lumpur.","Chef-cooked, macro-measured chilled meals designed to make balanced everyday eating easier.")
 s=s.replace("© 2026 Sudu & Sprout · Operated by Sudu & Sprout Enterprise","© 2026 Sudu & Sprout · Sudu & Sprout Enterprise")
-# Keep the Customer footer focused on ordering and support.
+# Make the footer labels clear and keep social channels visible.
 s=re.sub(
     r'<div class="footer-col"><strong>Customer</strong>.*?</div>',
-    '<div class="footer-col"><strong>Customer</strong>'
-    '<a href="#plans">Order meals</a>'
-    '<a href="#delivery">Delivery information</a>'
+    '<div class="footer-col"><strong>Help &amp; Support</strong>'
     '<a href="#faq">Frequently asked questions</a>'
-    '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp support</a>'
-    '<a href="mailto:sudusprout@gmail.com">Email support</a>'
+    '<a href="#delivery">Delivery information</a>'
+    '<a href="https://wa.me/60109131129" target="_blank" rel="noopener">WhatsApp us</a>'
+    '<a href="mailto:sudusprout@gmail.com">Email us</a>'
+    '</div>'
+    '<div class="footer-col"><strong>Follow us</strong>'
+    '<a href="https://www.instagram.com/sudusprout/" target="_blank" rel="noopener">Instagram @sudusprout</a>'
+    '<a href="https://www.facebook.com/profile.php?id=61595074215241" target="_blank" rel="noopener">Facebook</a>'
+    '<a href="https://xhslink.cn/m/532Djq1OS01" target="_blank" rel="noopener">Xiaohongshu / RedNote</a>'
+    '<a href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">WhatsApp Community</a>'
     '</div>',
     s,count=1,flags=re.S
+)
+s=s.replace(
+    'grid-template-columns:1.2fr .8fr .8fr',
+    'grid-template-columns:1.2fr .8fr .8fr .8fr',
+    1
 )
 
 # Add recurring delivery preferences and customer research fields.
@@ -774,7 +784,7 @@ s=s.replace(
     1
 )
 
-# Add a consistent meal-plan CTA to every major content section except the plan selector itself.
+# Add varied meal-plan CTAs across the homepage, all leading to the same customisation section.
 section_cta_css = r'''
 <style>
 .section-plan-cta{display:flex;justify-content:center;margin-top:28px;padding:0 18px}
@@ -792,7 +802,25 @@ def add_plan_cta(match):
         return match.group(0)
     if 'section-plan-cta' in body:
         return match.group(0)
-    cta = '<div class="section-plan-cta"><a class="cta" href="#plans">CHOOSE YOUR MEAL PLAN</a></div>'
+
+    if 'class="hero"' in opening:
+        label = 'CUSTOMISE YOUR MEAL PLAN'
+    elif 'id="why-macro"' in opening:
+        label = 'FIND YOUR MEAL PLAN'
+    elif 'id="how"' in opening:
+        label = 'BUILD YOUR WEEKLY PLAN'
+    elif 'class="benefits"' in opening:
+        label = 'START CUSTOMISING'
+    elif 'id="menu"' in opening:
+        label = 'CUSTOMISE YOUR PLAN'
+    elif 'id="delivery"' in opening:
+        label = 'PLAN YOUR FIRST DELIVERY'
+    elif 'id="faq"' in opening:
+        label = 'READY TO CUSTOMISE?'
+    else:
+        label = 'GET STARTED WITH YOUR PLAN'
+
+    cta = '<div class="section-plan-cta"><a class="cta" href="#plans">'+label+'</a></div>'
     return opening + body + cta + '</section>'
 
 s=re.sub(r'(<section\b[^>]*>)(.*?)</section>', add_plan_cta, s, flags=re.S)
