@@ -119,13 +119,9 @@ delivery_fields = '''
         <input name="deliveryArea" id="deliveryArea" readonly value="Enter postcode to check coverage">
         <small id="deliveryCoverage" class="address-help">We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.</small>
       </label>
-      <label class="full">Preferred weekly delivery day · morning delivery
-        <select name="deliveryDay" id="deliveryDay" required>
-          <option value="">Select one</option>
-          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
-        </select>
-        <small id="deliveryTiming" class="address-help">We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, two calendar days before delivery.</small>
+      <label class="full">When would you like to start? · morning delivery
+        <input type="date" name="deliveryDate" id="deliveryDate" required>
+        <small id="deliveryTiming" class="address-help">We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, three calendar days before delivery.</small>
       </label>
       <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Enter postcode"></label>
       <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
@@ -223,7 +219,7 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
       address:data.address,
       postcode:data.postcode,
       delivery_area:data.deliveryArea,
-      delivery_day:data.deliveryDay,
+      delivery_date:data.deliveryDate,
       plan:currentPlan().name,
       meal_preference:PREFS[selectedPref],
       meals_per_week:targetMeals,
@@ -283,7 +279,7 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
       const quoteNote=result.delivery_quote_required?' Your delivery fee will be confirmed with you before payment.':'';
       const deliveryDateText=result.delivery_date
         ? new Intl.DateTimeFormat('en-MY',{weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'}).format(new Date(result.delivery_date+'T08:00:00+08:00'))
-        : data.deliveryDay;
+        : data.deliveryDate;
       $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received. Your first morning delivery is '+deliveryDateText+'.'+quoteNote;
 
       const successPortal=$('#successPortal');
@@ -397,59 +393,65 @@ delivery_js = r'''
   const mealTotal = document.getElementById('sumTotal');
   const countEl = document.getElementById('sumCount');
   const form = document.getElementById('detailsForm');
-  const deliveryDay = document.getElementById('deliveryDay');
+  const deliveryDate = document.getElementById('deliveryDate');
   const deliveryTiming = document.getElementById('deliveryTiming');
   if (!area || !postcode || !feeField || !totalField) return;
 
-  const DAY_INDEX = {Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
-
-  function malaysiaTodayParts(){
+  function malaysiaNowParts(){
     const parts = new Intl.DateTimeFormat('en-CA',{
-      timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'
+      timeZone:'Asia/Kuala_Lumpur',
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit',
+      hourCycle:'h23'
     }).formatToParts(new Date());
     const o={};
     parts.forEach(p=>{ if(p.type!=='literal') o[p.type]=p.value; });
-    return {year:Number(o.year),month:Number(o.month),day:Number(o.day)};
+    return {
+      year:Number(o.year), month:Number(o.month), day:Number(o.day),
+      hour:Number(o.hour), minute:Number(o.minute), second:Number(o.second)
+    };
   }
 
-  function dateStringUTC(d){
-    return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+  function pad2(n){ return String(n).padStart(2,'0'); }
+
+  function minEligibleStartDate(){
+    const p=malaysiaNowParts();
+    const daysAhead=(p.hour<18 || (p.hour===18 && p.minute===0 && p.second===0)) ? 3 : 4;
+    const d=new Date(Date.UTC(p.year,p.month-1,p.day)+daysAhead*86400000);
+    return d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate());
   }
 
-  function nextEligibleDelivery(dayName){
-    const target=DAY_INDEX[dayName];
-    if(target===undefined) return null;
-    const p=malaysiaTodayParts();
-    const base=Date.UTC(p.year,p.month-1,p.day);
-    for(let offset=0;offset<=14;offset++){
-      const candidate=new Date(base+offset*86400000);
-      if(candidate.getUTCDay()!==target) continue;
-      const ds=dateStringUTC(candidate);
-      const cutoff=new Date(ds+'T18:00:00+08:00');
-      cutoff.setTime(cutoff.getTime()-2*86400000);
-      if(Date.now()<=cutoff.getTime()) return {date:ds,cutoff};
-    }
-    return null;
+  function cutoffForDate(dateString){
+    const cutoff=new Date(dateString+'T18:00:00+08:00');
+    cutoff.setTime(cutoff.getTime()-3*86400000);
+    return cutoff;
+  }
+
+  function refreshStartDateRules(){
+    if(!deliveryDate) return;
+    const minDate=minEligibleStartDate();
+    deliveryDate.min=minDate;
+    if(deliveryDate.value && deliveryDate.value<minDate) deliveryDate.value='';
+    updateDeliveryTiming();
   }
 
   function updateDeliveryTiming(){
-    if(!deliveryTiming || !deliveryDay) return;
-    if(!deliveryDay.value){
-      deliveryTiming.textContent='We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, two calendar days before delivery.';
+    if(!deliveryTiming || !deliveryDate) return;
+    if(!deliveryDate.value){
+      const minDate=minEligibleStartDate();
+      const earliestText=new Intl.DateTimeFormat('en-MY',{
+        weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'
+      }).format(new Date(minDate+'T08:00:00+08:00'));
+      deliveryTiming.textContent='Earliest available morning delivery: '+earliestText+'. Orders close at 6:00 PM, three calendar days before delivery.';
       return;
     }
-    const slot=nextEligibleDelivery(deliveryDay.value);
-    if(!slot){
-      deliveryTiming.textContent='Please choose another delivery day.';
-      return;
-    }
-    const dateText=new Intl.DateTimeFormat('en-MY',{
+    const selectedText=new Intl.DateTimeFormat('en-MY',{
       weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'
-    }).format(new Date(slot.date+'T08:00:00+08:00'));
+    }).format(new Date(deliveryDate.value+'T08:00:00+08:00'));
     const cutoffText=new Intl.DateTimeFormat('en-MY',{
       weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'
-    }).format(slot.cutoff);
-    deliveryTiming.textContent='Next available morning delivery: '+dateText+' · order cutoff: '+cutoffText+'.';
+    }).format(cutoffForDate(deliveryDate.value));
+    deliveryTiming.textContent='Morning delivery: '+selectedText+' · order cutoff: '+cutoffText+'. Weekly deliveries will continue on the same weekday.';
   }
 
   const COVERAGE = {
@@ -525,7 +527,10 @@ delivery_js = r'''
 
   postcode.addEventListener('input', updateDeliveryEstimate);
   postcode.addEventListener('change', updateDeliveryEstimate);
-  if(deliveryDay) deliveryDay.addEventListener('change', updateDeliveryTiming);
+  if(deliveryDate){
+    deliveryDate.addEventListener('focus', refreshStartDateRules);
+    deliveryDate.addEventListener('change', refreshStartDateRules);
+  }
   document.addEventListener('click', e => {
     if (e.target.closest('#chooseMealsBtn,#continueBtn,.count-btn,.plan-tier')) {
       setTimeout(updateDeliveryEstimate, 0);
@@ -533,7 +538,8 @@ delivery_js = r'''
   });
   if (mealTotal) new MutationObserver(updateDeliveryEstimate).observe(mealTotal,{childList:true,characterData:true,subtree:true});
   updateDeliveryEstimate();
-  updateDeliveryTiming();
+  refreshStartDateRules();
+  setInterval(refreshStartDateRules, 60000);
 })();
 </script>
 '''
@@ -733,7 +739,7 @@ s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order
 
 s=s.replace(
     '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
-    '<strong style="color:#244b35">Weekly meal plan:</strong> we deliver every morning, Monday to Sunday. Orders close at 6:00 PM, two calendar days before delivery. If this week\'s cutoff has passed, your first delivery automatically moves to the same weekday next week. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
+    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver every morning, Monday to Sunday. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
 )
 s=s.replace(
     'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
@@ -774,7 +780,7 @@ if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
-for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","ordering flow can later be connected to payment"]:
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
