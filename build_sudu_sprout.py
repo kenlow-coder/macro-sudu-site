@@ -145,9 +145,8 @@ delivery_fields = '''
             <option>Damansara Heights</option>
             <option>Bangsar</option>
           </optgroup>
-          <option>Other area</option>
         </select>
-        <small id="deliveryCoverage" class="address-help">Free delivery: Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are RM5 per delivery day. Other areas are quoted based on Grab / Lalamove rates.</small>
+        <small id="deliveryCoverage" class="address-help">Free delivery: Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are RM5 per delivery day. Outside these areas? WhatsApp us first to check delivery availability.</small>
       </label>
       <label class="full">When would you like to start? · delivery 10AM–1PM
         <input type="date" name="deliveryDate" id="deliveryDate" required>
@@ -306,7 +305,7 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
       try{localStorage.setItem('suduSproutOrderDraft',JSON.stringify(saved));}catch(err){}
 
       closePortal('detailsPortal');
-      const quoteNote=result.delivery_quote_required?' Your delivery fee will be confirmed with you before payment.':'';
+      const quoteNote='';
       const deliveryDateText=result.delivery_date
         ? new Intl.DateTimeFormat('en-MY',{weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'}).format(new Date(result.delivery_date+'T08:00:00+08:00'))
         : data.deliveryDate;
@@ -324,27 +323,19 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
         }
         const amount='RM'+Number(result.total_amount||0).toFixed(2);
         const orderRef=String(result.order_number||'');
-        if(result.delivery_quote_required){
-          const quoteMessage='Hi Sudu & Sprout, I have placed order '+orderRef+' for '+data.deliveryArea+'. Please confirm the Grab / Lalamove delivery fee before I make payment.';
-          payBox.innerHTML=
-            '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Delivery Quote Required</strong>'+
-            '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Your meals are <strong>RM'+Number(result.meal_subtotal||0).toFixed(2)+'</strong>. The delivery fee for <strong>'+data.deliveryArea+'</strong> will be calculated using the current Grab / Lalamove rate. Please get the delivery quote before making payment.</div>'+
-            '<a href="https://wa.me/60109131129?text='+encodeURIComponent(quoteMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">WHATSAPP FOR DELIVERY QUOTE</a>';
-        }else{
-          const waMessage='Hi Sudu & Sprout, I have made payment for order '+orderRef+' ('+amount+'). I will attach my payment receipt here.';
-          payBox.innerHTML=
-            '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
-            '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
-            '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
-              '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
-              '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
-              '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
-              '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
-              '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
-            '</div>'+
-            '<a href="https://wa.me/60109131129?text='+encodeURIComponent(waMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">I\'VE PAID — WHATSAPP RECEIPT</a>'+
-            '<div style="font-size:.76rem;color:#6a746c;margin-top:10px;text-align:center">Prefer cash? WhatsApp us first to arrange payment before delivery.</div>';
-        }
+        const waMessage='Hi Sudu & Sprout, I have made payment for order '+orderRef+' ('+amount+'). I will attach my payment receipt here.';
+        payBox.innerHTML=
+          '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
+          '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
+          '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
+            '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
+            '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
+            '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
+            '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
+            '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
+          '</div>'+
+          '<a href="https://wa.me/60109131129?text='+encodeURIComponent(waMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">I\'VE PAID — WHATSAPP RECEIPT</a>'+
+          '<div style="font-size:.76rem;color:#6a746c;margin-top:10px;text-align:center">Prefer cash? WhatsApp us first to arrange payment before delivery.</div>';
       }
       openPortal('successPortal');
     }catch(err){
@@ -367,7 +358,7 @@ s=s.replace(
 )
 s=s.replace(
     'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken in this prototype.',
-    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted. For other delivery areas, wait for your Grab / Lalamove delivery quote before paying.'
+    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted. If your area is not listed, WhatsApp us first before ordering online.'
 )
 
 
@@ -494,8 +485,7 @@ delivery_js = r'''
     'Publika': {fee:0},
     'Mont Kiara': {fee:0},
     'Damansara Heights': {fee:5},
-    'Bangsar': {fee:5},
-    'Other area': {quote:true}
+    'Bangsar': {fee:5}
   };
 
   const parseRM = value => {
@@ -516,17 +506,6 @@ delivery_js = r'''
       if(coverage){
         coverage.textContent='Choose your delivery area to see the applicable delivery charge.';
         coverage.style.color='#718078';
-      }
-      if(submit) submit.disabled=false;
-      return;
-    }
-
-    if(zone.quote){
-      feeField.value='Grab / Lalamove quote';
-      totalField.value=money(subtotal)+' + delivery quote';
-      if(coverage){
-        coverage.textContent='Other areas are quoted according to the current Grab / Lalamove delivery price. We will confirm the delivery fee before you make payment.';
-        coverage.style.color='#8a5a16';
       }
       if(submit) submit.disabled=false;
       return;
@@ -767,15 +746,15 @@ s=s.replace(
 
 s=s.replace(
     'Currently focused on Kepong, with wider KL and Central Selangor expansion planned.',
-    'Delivery available daily from 10AM–1PM across our listed areas, with Grab / Lalamove quotes available for other areas.'
+    'Delivery available daily from 10AM–1PM across our listed areas. Outside these areas, WhatsApp us first to check whether delivery can be arranged.'
 )
 s=s.replace(
     '<p>We are currently focused on Kepong. Kuala Lumpur and Central Selangor are planned next as we expand our delivery coverage.</p><span class="pill">Kepong · current</span><span class="pill">Kuala Lumpur · soon</span><span class="pill">Central Selangor · soon</span>',
-    '<p>We deliver fresh chilled meals daily between <strong>10AM–1PM</strong>. Orders close at 6:00 PM, three calendar days before delivery. <strong>Free delivery</strong> is available to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. Other areas are quoted according to the current Grab / Lalamove delivery price.</p><span class="pill">Free · Kepong · Menjalara · Desa ParkCity · Maluri</span><span class="pill">Free · Ativo Plaza · Publika · Mont Kiara</span><span class="pill">RM5/day · Damansara Heights · Bangsar</span><span class="pill">Other areas · Grab / Lalamove quote</span>'
+    '<p>We deliver fresh chilled meals daily between <strong>10AM–1PM</strong>. Orders close at 6:00 PM, three calendar days before delivery. <strong>Free delivery</strong> is available to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. If your area is not listed, please WhatsApp us first to check whether delivery can be arranged via Grab / Lalamove.</p><span class="pill">Free · Kepong · Menjalara · Desa ParkCity · Maluri</span><span class="pill">Free · Ativo Plaza · Publika · Mont Kiara</span><span class="pill">RM5/day · Damansara Heights · Bangsar</span><a class="pill" href="https://wa.me/60109131129" target="_blank" rel="noopener">Other areas · WhatsApp us first</a>'
 )
 s=s.replace(
     'We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.',
-    'We deliver between <strong>10AM–1PM</strong>. Delivery is free to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. Other areas are quoted based on the current Grab / Lalamove rate.'
+    'We deliver between <strong>10AM–1PM</strong>. Delivery is free to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. If your area is not listed, WhatsApp us first to check whether delivery can be arranged.'
 )
 
 s=s.replace(
@@ -842,7 +821,7 @@ if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
-for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","ordering flow can later be connected to payment"]:
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
