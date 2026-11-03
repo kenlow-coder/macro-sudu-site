@@ -358,7 +358,7 @@ s=s.replace(
 )
 s=s.replace(
     'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken in this prototype.',
-    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted. If your area is not listed, WhatsApp us first before ordering online.'
+    '<strong>Order &amp; Privacy Notice:</strong> By placing your order, you confirm the details you provide are accurate. Sudu &amp; Sprout will use the information you submit to process and deliver your order, manage your meal plan, contact you about delivery or payment, and understand your meal preferences. We won\'t use your details for marketing unless you separately opt in.'
 )
 
 
@@ -737,7 +737,7 @@ s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order
 
 s=s.replace(
     '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
-    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
+    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt. If your area is not listed, WhatsApp us first before ordering online.'
 )
 s=s.replace(
     'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
@@ -821,7 +821,7 @@ if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
-for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","ordering flow can later be connected to payment"]:
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
