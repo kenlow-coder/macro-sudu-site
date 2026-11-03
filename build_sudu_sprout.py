@@ -130,14 +130,30 @@ s=s.replace(
 # Add recurring delivery preferences and customer research fields.
 delivery_fields = '''
       <label class="full">Delivery area
-        <input name="deliveryArea" id="deliveryArea" readonly value="Enter postcode to check coverage">
-        <small id="deliveryCoverage" class="address-help">We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.</small>
+        <select name="deliveryArea" id="deliveryArea" required>
+          <option value="">Select your delivery area</option>
+          <optgroup label="Free delivery">
+            <option>Kepong</option>
+            <option>Menjalara</option>
+            <option>Desa ParkCity</option>
+            <option>Maluri</option>
+            <option>Ativo Plaza</option>
+            <option>Publika</option>
+            <option>Mont Kiara</option>
+          </optgroup>
+          <optgroup label="RM5 per delivery day">
+            <option>Damansara Heights</option>
+            <option>Bangsar</option>
+          </optgroup>
+          <option>Other area</option>
+        </select>
+        <small id="deliveryCoverage" class="address-help">Free delivery: Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are RM5 per delivery day. Other areas are quoted based on Grab / Lalamove rates.</small>
       </label>
-      <label class="full">When would you like to start? · morning delivery
+      <label class="full">When would you like to start? · delivery 10AM–1PM
         <input type="date" name="deliveryDate" id="deliveryDate" required>
-        <small id="deliveryTiming" class="address-help">We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, three calendar days before delivery.</small>
+        <small id="deliveryTiming" class="address-help">We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.</small>
       </label>
-      <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Enter postcode"></label>
+      <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Choose delivery area"></label>
       <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
 '''
 s=re.sub(
@@ -294,7 +310,7 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
       const deliveryDateText=result.delivery_date
         ? new Intl.DateTimeFormat('en-MY',{weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'}).format(new Date(result.delivery_date+'T08:00:00+08:00'))
         : data.deliveryDate;
-      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received. Your first morning delivery is '+deliveryDateText+'.'+quoteNote;
+      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received. Your first delivery is '+deliveryDateText+' between 10AM–1PM.'+quoteNote;
 
       const successPortal=$('#successPortal');
       if(successPortal){
@@ -308,19 +324,27 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
         }
         const amount='RM'+Number(result.total_amount||0).toFixed(2);
         const orderRef=String(result.order_number||'');
-        const waMessage='Hi Sudu & Sprout, I have made payment for order '+orderRef+' ('+amount+'). I will attach my payment receipt here.';
-        payBox.innerHTML=
-          '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
-          '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
-          '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
-            '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
-            '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
-            '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
-            '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
-            '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
-          '</div>'+
-          '<a href="https://wa.me/60109131129?text='+encodeURIComponent(waMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">I\'VE PAID — WHATSAPP RECEIPT</a>'+
-          '<div style="font-size:.76rem;color:#6a746c;margin-top:10px;text-align:center">Prefer cash? WhatsApp us first to arrange payment before delivery.</div>';
+        if(result.delivery_quote_required){
+          const quoteMessage='Hi Sudu & Sprout, I have placed order '+orderRef+' for '+data.deliveryArea+'. Please confirm the Grab / Lalamove delivery fee before I make payment.';
+          payBox.innerHTML=
+            '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Delivery Quote Required</strong>'+
+            '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Your meals are <strong>RM'+Number(result.meal_subtotal||0).toFixed(2)+'</strong>. The delivery fee for <strong>'+data.deliveryArea+'</strong> will be calculated using the current Grab / Lalamove rate. Please get the delivery quote before making payment.</div>'+
+            '<a href="https://wa.me/60109131129?text='+encodeURIComponent(quoteMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">WHATSAPP FOR DELIVERY QUOTE</a>';
+        }else{
+          const waMessage='Hi Sudu & Sprout, I have made payment for order '+orderRef+' ('+amount+'). I will attach my payment receipt here.';
+          payBox.innerHTML=
+            '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
+            '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
+            '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
+              '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
+              '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
+              '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
+              '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
+              '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
+            '</div>'+
+            '<a href="https://wa.me/60109131129?text='+encodeURIComponent(waMessage)+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:12px 14px;border-radius:12px;background:#244b35;color:white;text-decoration:none;font-weight:800">I\'VE PAID — WHATSAPP RECEIPT</a>'+
+            '<div style="font-size:.76rem;color:#6a746c;margin-top:10px;text-align:center">Prefer cash? WhatsApp us first to arrange payment before delivery.</div>';
+        }
       }
       openPortal('successPortal');
     }catch(err){
@@ -343,7 +367,7 @@ s=s.replace(
 )
 s=s.replace(
     'By continuing, you agree to our future Terms &amp; Privacy Policy. No payment is taken in this prototype.',
-    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted.'
+    'By continuing, you agree to our future Terms &amp; Privacy Policy. Payment is made by bank transfer after your order is submitted. For other delivery areas, wait for your Grab / Lalamove delivery quote before paying.'
 )
 
 
@@ -362,11 +386,6 @@ new_start_submit = r'''  $('#startForm').addEventListener('submit',e=>{
     e.preventDefault();
     const form=e.currentTarget;
     const postcode=$('#startPostcode').value.trim().replace(/\D/g,'');
-    const coverage={
-      '52000':'Kepong','52100':'Kepong','52200':'Kepong',
-      '47000':'Sungai Buloh',
-      '59000':'Bangsar','59100':'Bangsar','59200':'Bangsar'
-    };
     let coverageError=document.getElementById('startCoverageError');
     if(!coverageError){
       coverageError=document.createElement('div');
@@ -374,10 +393,8 @@ new_start_submit = r'''  $('#startForm').addEventListener('submit',e=>{
       coverageError.style.cssText='display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(180,45,35,.25);border-radius:12px;background:#fff2ef;color:#8a2d22;font-size:.8rem;line-height:1.45';
       form.appendChild(coverageError);
     }
-    if(!coverage[postcode]){
-      coverageError.textContent=postcode.length===5
-        ? 'Sorry, we do not deliver to postcode '+postcode+' yet. We currently cover selected postcodes in Kepong, Sungai Buloh and Bangsar.'
-        : 'Please enter a valid 5-digit postcode.';
+    if(postcode.length!==5){
+      coverageError.textContent='Please enter a valid 5-digit postcode.';
       coverageError.style.display='block';
       gateComplete=false;
       return;
@@ -456,7 +473,7 @@ delivery_js = r'''
       const earliestText=new Intl.DateTimeFormat('en-MY',{
         weekday:'long',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kuala_Lumpur'
       }).format(new Date(minDate+'T08:00:00+08:00'));
-      deliveryTiming.textContent='Earliest available morning delivery: '+earliestText+'. Orders close at 6:00 PM, three calendar days before delivery.';
+      deliveryTiming.textContent='Earliest available delivery: '+earliestText+' between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.';
       return;
     }
     const selectedText=new Intl.DateTimeFormat('en-MY',{
@@ -465,17 +482,20 @@ delivery_js = r'''
     const cutoffText=new Intl.DateTimeFormat('en-MY',{
       weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuala_Lumpur'
     }).format(cutoffForDate(deliveryDate.value));
-    deliveryTiming.textContent='Morning delivery: '+selectedText+' · order cutoff: '+cutoffText+'. Weekly deliveries will continue on the same weekday.';
+    deliveryTiming.textContent='Delivery: '+selectedText+' between 10AM–1PM · order cutoff: '+cutoffText+'. Weekly deliveries will continue on the same weekday.';
   }
 
-  const COVERAGE = {
-    '52000': {area:'Kepong', fee:0},
-    '52100': {area:'Kepong', fee:0},
-    '52200': {area:'Kepong', fee:0},
-    '47000': {area:'Sungai Buloh', fee:5},
-    '59000': {area:'Bangsar', fee:5},
-    '59100': {area:'Bangsar', fee:5},
-    '59200': {area:'Bangsar', fee:5}
+  const DELIVERY_AREAS = {
+    'Kepong': {fee:0},
+    'Menjalara': {fee:0},
+    'Desa ParkCity': {fee:0},
+    'Maluri': {fee:0},
+    'Ativo Plaza': {fee:0},
+    'Publika': {fee:0},
+    'Mont Kiara': {fee:0},
+    'Damansara Heights': {fee:5},
+    'Bangsar': {fee:5},
+    'Other area': {quote:true}
   };
 
   const parseRM = value => {
@@ -485,61 +505,46 @@ delivery_js = r'''
   const money = n => 'RM' + Number(n).toFixed(2);
 
   function updateDeliveryEstimate(){
-    const pc = String(postcode.value || '').replace(/\D/g,'').slice(0,5);
-    if (postcode.value !== pc) postcode.value = pc;
-    const zone = COVERAGE[pc];
-    const count = Number((countEl && countEl.textContent) || 0);
+    const selected = String(area.value || '');
+    const zone = DELIVERY_AREAS[selected];
     const subtotal = parseRM(mealTotal && mealTotal.textContent);
     const submit = form && form.querySelector('.portal-submit');
 
-    if (!pc){
-      area.value = 'Enter postcode to check coverage';
-      feeField.value = 'Enter postcode';
-      totalField.value = '—';
+    if(!zone){
+      feeField.value='Choose delivery area';
+      totalField.value='—';
       if(coverage){
-        coverage.textContent='We currently deliver only to selected postcodes in Kepong, Sungai Buloh and Bangsar.';
+        coverage.textContent='Choose your delivery area to see the applicable delivery charge.';
         coverage.style.color='#718078';
       }
       if(submit) submit.disabled=false;
       return;
     }
 
-    if (pc.length < 5){
-      area.value = 'Checking postcode…';
-      feeField.value = '—';
-      totalField.value = '—';
+    if(zone.quote){
+      feeField.value='Grab / Lalamove quote';
+      totalField.value=money(subtotal)+' + delivery quote';
       if(coverage){
-        coverage.textContent='Enter the full 5-digit postcode.';
-        coverage.style.color='#718078';
+        coverage.textContent='Other areas are quoted according to the current Grab / Lalamove delivery price. We will confirm the delivery fee before you make payment.';
+        coverage.style.color='#8a5a16';
       }
-      if(submit) submit.disabled=true;
+      if(submit) submit.disabled=false;
       return;
     }
 
-    if (!zone){
-      area.value = 'Not covered yet';
-      feeField.value = 'Not available';
-      totalField.value = '—';
-      if(coverage){
-        coverage.textContent='Sorry, we do not deliver to postcode '+pc+' yet.';
-        coverage.style.color='#8a2d22';
-      }
-      if(submit) submit.disabled=true;
-      return;
-    }
-
-    area.value = zone.area;
-    const fee = zone.fee * count;
-    feeField.value = money(fee);
-    totalField.value = money(subtotal + fee);
+    const fee=Number(zone.fee||0);
+    feeField.value=fee===0?'FREE':money(fee)+' / delivery day';
+    totalField.value=money(subtotal+fee);
     if(coverage){
-      coverage.textContent='✓ '+zone.area+' is covered for delivery.';
+      coverage.textContent=fee===0
+        ? '✓ Free delivery to '+selected+'.'
+        : '✓ '+selected+' delivery is RM5 per delivery day.';
       coverage.style.color='#244b35';
     }
     if(submit) submit.disabled=false;
   }
 
-  postcode.addEventListener('input', updateDeliveryEstimate);
+  area.addEventListener('change', updateDeliveryEstimate);
   postcode.addEventListener('change', updateDeliveryEstimate);
   if(deliveryDate){
     deliveryDate.addEventListener('focus', refreshStartDateRules);
@@ -753,7 +758,7 @@ s=s.replace('Your Sudu & Sprout order draft is ready.','Your Sudu & Sprout order
 
 s=s.replace(
     '<strong style="color:#244b35">Weekly subscription:</strong> auto-renews each week. You can skip, pause or cancel future weeks before the cutoff. Meal changes close at 6:00 PM two days before your delivery day.',
-    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver every morning, Monday to Sunday. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
+    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
 )
 s=s.replace(
     'Your order details are securely saved when you submit this form. Payment is confirmed separately until online recurring payment is enabled.',
@@ -762,15 +767,15 @@ s=s.replace(
 
 s=s.replace(
     'Currently focused on Kepong, with wider KL and Central Selangor expansion planned.',
-    'Currently delivering to selected postcodes in Kepong, Sungai Buloh and Bangsar.'
+    'Delivery available daily from 10AM–1PM across our listed areas, with Grab / Lalamove quotes available for other areas.'
 )
 s=s.replace(
     '<p>We are currently focused on Kepong. Kuala Lumpur and Central Selangor are planned next as we expand our delivery coverage.</p><span class="pill">Kepong · current</span><span class="pill">Kuala Lumpur · soon</span><span class="pill">Central Selangor · soon</span>',
-    '<p>We deliver fresh chilled meals every morning, Monday to Sunday, to selected postcodes in Kepong, Sungai Buloh and Bangsar. Orders close at 6:00 PM, three calendar days before delivery. Kepong delivery is free; Sungai Buloh and Bangsar are RM5 per meal. Enter your postcode at checkout to confirm coverage.</p><span class="pill">Kepong · 52000 / 52100 / 52200</span><span class="pill">Sungai Buloh · 47000</span><span class="pill">Bangsar · 59000 / 59100 / 59200</span>'
+    '<p>We deliver fresh chilled meals daily between <strong>10AM–1PM</strong>. Orders close at 6:00 PM, three calendar days before delivery. <strong>Free delivery</strong> is available to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. Other areas are quoted according to the current Grab / Lalamove delivery price.</p><span class="pill">Free · Kepong · Menjalara · Desa ParkCity · Maluri</span><span class="pill">Free · Ativo Plaza · Publika · Mont Kiara</span><span class="pill">RM5/day · Damansara Heights · Bangsar</span><span class="pill">Other areas · Grab / Lalamove quote</span>'
 )
 s=s.replace(
     'We are starting with selected delivery areas around <strong>Kepong and the wider KL / Central Selangor area</strong>, with plans to expand. Delivery availability will depend on your postcode.',
-    'We currently deliver to selected postcodes in <strong>Kepong, Sungai Buloh and Bangsar</strong>. Enter your postcode at checkout to confirm coverage and the applicable delivery fee.'
+    'We deliver between <strong>10AM–1PM</strong>. Delivery is free to Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are <strong>RM5 per delivery day</strong>. Other areas are quoted based on the current Grab / Lalamove rate.'
 )
 
 s=s.replace(
@@ -837,7 +842,7 @@ if "Macro Sudu" in s: raise RuntimeError("Brand rename incomplete")
 if re.search(r'\bvegan\b',s,re.I): raise RuntimeError("Vegan wording still present")
 for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
     if req not in s and req.replace("&","&amp;") not in s: raise RuntimeError("Missing "+req)
-for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","ordering flow can later be connected to payment"]:
+for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
 out.write_text(s,encoding="utf-8")
