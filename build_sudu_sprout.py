@@ -194,6 +194,14 @@ address_css = r'''
 .address-suggestion strong{display:block;font-size:.86rem;color:#244b35}
 .address-suggestion span{display:block;margin-top:2px;font-size:.74rem;color:#6f7d75}
 .address-help{display:block;margin-top:6px;font-size:.72rem;color:#718078;line-height:1.35}
+.address-verify-status{display:none;margin-top:8px;padding:9px 11px;border-radius:10px;font-size:.76rem;line-height:1.4}
+.address-verify-status.show{display:block;background:#edf7f0;color:#244b35;border:1px solid rgba(36,75,53,.16)}
+.address-verify-status.checking{display:block;background:#f7f5ef;color:#65736b;border:1px solid rgba(36,75,53,.10)}
+.address-warning{margin-top:9px;padding:11px 12px;border:1px solid rgba(180,85,35,.24);border-radius:12px;background:#fff7ed;color:#71411f;font-size:.76rem;line-height:1.45}
+.address-warning[hidden]{display:none}
+.address-warning strong{display:block;color:#8a431d;margin-bottom:4px}
+.address-confirm{display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:#4d443c}
+.address-confirm input{margin-top:3px;flex:0 0 auto}
 '''
 s=s.replace("</style>",address_css+"\n</style>",1)
 
@@ -201,7 +209,13 @@ old_address = '<label class="full">Delivery address<textarea name="address" rows
 new_address = '''<label class="full address-autocomplete-wrap">Delivery address
         <textarea name="address" id="detailsAddress" rows="3" autocomplete="off" aria-autocomplete="list" aria-controls="addressSuggestions" placeholder="Start with house number, street or postcode" required></textarea>
         <div class="address-suggestions" id="addressSuggestions" role="listbox" aria-label="Address suggestions"></div>
-        <small class="address-help">Start typing a house number, road name or postcode. Select a suggestion to fill the address and postcode.</small>
+        <small class="address-help">Start typing a house number, road name or postcode. Select a suggestion to verify the address and automatically fill the delivery area when it matches our coverage.</small>
+        <div id="addressVerifyStatus" class="address-verify-status" aria-live="polite"></div>
+        <div id="addressUnverifiedWarning" class="address-warning" hidden>
+          <strong>We couldn’t verify this exact address.</strong>
+          Please check the house/unit number, street and postcode. If you’re sure the address is correct, you can still continue.
+          <label class="address-confirm"><input type="checkbox" id="confirmUnverifiedAddress"> <span>I’ve checked this address and I’m sure I want to proceed.</span></label>
+        </div>
       </label>'''
 if old_address not in s:
     raise RuntimeError("Could not find delivery address field")
@@ -504,8 +518,13 @@ delivery_js = r'''
       feeField.value='Choose delivery area';
       totalField.value='—';
       if(coverage){
-        coverage.textContent='Choose your delivery area to see the applicable delivery charge.';
-        coverage.style.color='#718078';
+        if(area.dataset.addressOutside==='1'){
+          coverage.textContent='This address appears to be outside our online delivery areas. Please WhatsApp us first to check whether delivery can be arranged.';
+          coverage.style.color='#8a5a16';
+        }else{
+          coverage.textContent='Choose your delivery area to see the applicable delivery charge.';
+          coverage.style.color='#718078';
+        }
       }
       if(submit) submit.disabled=false;
       return;
@@ -523,7 +542,10 @@ delivery_js = r'''
     if(submit) submit.disabled=false;
   }
 
-  area.addEventListener('change', updateDeliveryEstimate);
+  area.addEventListener('change', () => {
+    if(area.value) area.dataset.addressOutside='';
+    updateDeliveryEstimate();
+  });
   postcode.addEventListener('change', updateDeliveryEstimate);
   if(deliveryDate){
     deliveryDate.addEventListener('focus', refreshStartDateRules);
@@ -546,13 +568,28 @@ address_js = r'''
 (() => {
   const address = document.getElementById('detailsAddress');
   const postcode = document.getElementById('detailsPostcode');
+  const area = document.getElementById('deliveryArea');
   const box = document.getElementById('addressSuggestions');
-  if (!address || !postcode || !box) return;
+  const status = document.getElementById('addressVerifyStatus');
+  const warning = document.getElementById('addressUnverifiedWarning');
+  const confirmUnverified = document.getElementById('confirmUnverifiedAddress');
+  const form = document.getElementById('detailsForm');
+  if (!address || !postcode || !area || !box || !form) return;
 
   let timer = null;
+  let verifyTimer = null;
   let controller = null;
+  let verificationController = null;
+  let submitBypass = false;
 
   const clean = value => String(value || '').trim();
+  const normalize = value => clean(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+
   const parts = p => [
     p.housenumber,
     p.street || p.name,
@@ -572,97 +609,289 @@ address_js = r'''
     });
   };
 
-  const hide = () => {
+  const malaysiaFeatures = features => (Array.isArray(features) ? features : []).filter(f => {
+    const cc = clean(f?.properties?.countrycode).toLowerCase();
+    const country = clean(f?.properties?.country).toLowerCase();
+    return !cc || cc === 'my' || country === 'malaysia';
+  });
+
+  const featureText = feature => {
+    const p=feature?.properties || {};
+    return uniqueParts([
+      p.name,p.housenumber,p.street,p.district,p.city,p.county,p.state,p.postcode,p.country
+    ].filter(Boolean).map(clean)).join(' ');
+  };
+
+  const AREA_PATTERNS = [
+    ['Ativo Plaza', /\bativo\s+plaza\b/i],
+    ['Publika', /\bpublika\b/i],
+    ['Desa ParkCity', /\bdesa\s+park\s*city\b/i],
+    ['Menjalara', /\b(?:bandar\s+)?menjalara\b/i],
+    ['Mont Kiara', /\bmont\s+kiara\b/i],
+    ['Damansara Heights', /\b(?:damansara\s+heights|bukit\s+damansara)\b/i],
+    ['Maluri', /\b(?:taman\s+)?maluri\b/i],
+    ['Bangsar', /\bbangsar\b/i],
+    ['Kepong', /\bkepong\b/i]
+  ];
+
+  function detectArea(feature){
+    const text=featureText(feature);
+    for(const [name,pattern] of AREA_PATTERNS){
+      if(pattern.test(text)) return name;
+    }
+    return '';
+  }
+
+  function setAreaFromFeature(feature){
+    const matched=detectArea(feature);
+    if(matched){
+      area.dataset.addressOutside='';
+      area.value=matched;
+      area.dispatchEvent(new Event('change',{bubbles:true}));
+      return matched;
+    }
+    area.value='';
+    area.dataset.addressOutside='1';
+    area.dispatchEvent(new Event('change',{bubbles:true}));
+    return '';
+  }
+
+  function hide(){
     box.classList.remove('open');
     box.replaceChildren();
-  };
+  }
 
-  const selectFeature = feature => {
-    const p = feature.properties || {};
-    const values = uniqueParts(parts(p));
-    const pc = clean(p.postcode);
-    address.value = values.join(', ');
-    if (pc) postcode.value = pc;
+  function hideWarning(){
+    if(warning) warning.hidden=true;
+    if(confirmUnverified) confirmUnverified.checked=false;
+  }
+
+  function showStatus(message, kind='show'){
+    if(!status) return;
+    status.textContent=message;
+    status.className='address-verify-status '+kind;
+  }
+
+  function clearStatus(){
+    if(!status) return;
+    status.textContent='';
+    status.className='address-verify-status';
+  }
+
+  function markDirty(){
+    address.dataset.verified='0';
+    address.dataset.verificationState='unknown';
+    hideWarning();
+    clearStatus();
+  }
+
+  function markVerified(feature){
+    address.dataset.verified='1';
+    address.dataset.verificationState='verified';
+    hideWarning();
+    const matchedArea=setAreaFromFeature(feature);
+    const p=feature?.properties || {};
+    const pc=clean(p.postcode);
+    if(pc) postcode.value=pc;
+    postcode.dispatchEvent(new Event('change',{bubbles:true}));
+
+    if(matchedArea){
+      showStatus('✓ Address verified. Delivery area set to '+matchedArea+'.');
+    }else{
+      showStatus('✓ Address found. This location is outside our online delivery areas — please WhatsApp us first to arrange delivery.');
+    }
+  }
+
+  function showUnverified(){
+    address.dataset.verified='0';
+    address.dataset.verificationState='unverified';
+    clearStatus();
+    if(warning) warning.hidden=false;
+  }
+
+  function selectFeature(feature){
+    const p=feature.properties || {};
+    const values=uniqueParts(parts(p));
+    const pc=clean(p.postcode);
+    address.value=values.join(', ');
+    if(pc) postcode.value=pc;
     hide();
-    address.dispatchEvent(new Event('change', {bubbles:true}));
-    postcode.dispatchEvent(new Event('change', {bubbles:true}));
-  };
+    markVerified(feature);
+    address.dispatchEvent(new Event('change',{bubbles:true}));
+  }
 
-  const render = features => {
+  function render(features){
     hide();
-    const malaysia = features.filter(f => {
-      const cc = clean(f?.properties?.countrycode).toLowerCase();
-      const country = clean(f?.properties?.country).toLowerCase();
-      return !cc || cc === 'my' || country === 'malaysia';
-    }).slice(0,6);
-
-    if (!malaysia.length) return;
+    const malaysia=malaysiaFeatures(features).slice(0,6);
+    if(!malaysia.length) return;
 
     malaysia.forEach(feature => {
-      const p = feature.properties || {};
-      const line = uniqueParts(parts(p)).join(', ');
-      if (!line) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'address-suggestion';
+      const p=feature.properties || {};
+      const line=uniqueParts(parts(p)).join(', ');
+      if(!line) return;
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='address-suggestion';
       button.setAttribute('role','option');
 
-      const main = document.createElement('strong');
-      main.textContent = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || line;
-      const sub = document.createElement('span');
-      sub.textContent = line + (p.country ? ', ' + p.country : '');
+      const main=document.createElement('strong');
+      main.textContent=[p.housenumber,p.street || p.name].filter(Boolean).join(' ') || line;
+      const sub=document.createElement('span');
+      sub.textContent=line+(p.country ? ', '+p.country : '');
 
-      button.append(main, sub);
-      button.addEventListener('click', () => selectFeature(feature));
+      button.append(main,sub);
+      button.addEventListener('click',()=>selectFeature(feature));
       box.appendChild(button);
     });
 
-    if (box.childElementCount) box.classList.add('open');
-  };
+    if(box.childElementCount) box.classList.add('open');
+  }
+
+  async function lookup(query, signal, limit=8){
+    const url='https://photon.komoot.io/api/?q='+encodeURIComponent(query)+
+      '&limit='+limit+'&lang=en&bbox=99.5,0.5,119.5,7.5';
+    const response=await fetch(url,{signal,headers:{'Accept':'application/json'}});
+    if(!response.ok) throw new Error('Address lookup unavailable');
+    const data=await response.json();
+    return malaysiaFeatures(data.features);
+  }
+
+  function meaningfulTokens(value){
+    const stop=new Set(['malaysia','kuala','lumpur','wilayah','persekutuan','jalan','jln','lorong','taman','no','unit']);
+    return normalize(value).split(' ').filter(x=>x.length>1 && !stop.has(x));
+  }
+
+  function strongMatch(input, feature){
+    const p=feature?.properties || {};
+    const inTokens=meaningfulTokens(input);
+    const outSet=new Set(meaningfulTokens(featureText(feature)));
+    if(!inTokens.length) return false;
+
+    const overlap=inTokens.filter(t=>outSet.has(t)).length;
+    const coverageRatio=overlap/Math.min(inTokens.length,6);
+    const inputPostcode=(String(input).match(/\b\d{5}\b/)||[])[0] || '';
+    const featurePostcode=clean(p.postcode);
+    const postcodeMatch=Boolean(inputPostcode && featurePostcode && inputPostcode===featurePostcode);
+    const inputNumber=(normalize(input).match(/^\d+[a-z]?\b/)||[])[0] || '';
+    const featureNumber=normalize(p.housenumber || '');
+    const numberMatch=Boolean(inputNumber && featureNumber && inputNumber===featureNumber);
+
+    return (overlap>=2 && coverageRatio>=0.45) ||
+           (postcodeMatch && overlap>=1) ||
+           (numberMatch && overlap>=1);
+  }
+
+  async function verifyTypedAddress(){
+    const a=clean(address.value);
+    const pc=clean(postcode.value);
+    if(a.length<5){
+      showUnverified();
+      return false;
+    }
+
+    if(verificationController) verificationController.abort();
+    verificationController=new AbortController();
+    showStatus('Checking this address…','checking');
+
+    try{
+      const query=[a,pc,'Malaysia'].filter(Boolean).join(', ');
+      const features=await lookup(query,verificationController.signal,6);
+      const match=features.find(f=>strongMatch(a+' '+pc,f));
+      if(!match){
+        showUnverified();
+        return false;
+      }
+      markVerified(match);
+      return true;
+    }catch(err){
+      if(err && err.name==='AbortError') return false;
+      showUnverified();
+      return false;
+    }
+  }
 
   async function searchAddress(){
-    const a = clean(address.value);
-    const pc = clean(postcode.value);
-    const query = [a, pc, 'Malaysia'].filter(Boolean).join(', ');
-    if ((a + pc).replace(/\s/g,'').length < 3) {
+    const a=clean(address.value);
+    const pc=clean(postcode.value);
+    const query=[a,pc,'Malaysia'].filter(Boolean).join(', ');
+    if((a+pc).replace(/\s/g,'').length<3){
       hide();
       return;
     }
 
-    if (controller) controller.abort();
-    controller = new AbortController();
+    if(controller) controller.abort();
+    controller=new AbortController();
 
-    try {
-      const url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query) +
-        '&limit=8&lang=en&bbox=99.5,0.5,119.5,7.5';
-      const response = await fetch(url, {signal:controller.signal, headers:{'Accept':'application/json'}});
-      if (!response.ok) throw new Error('Address lookup unavailable');
-      const data = await response.json();
-      render(Array.isArray(data.features) ? data.features : []);
-    } catch (err) {
-      if (err && err.name === 'AbortError') return;
+    try{
+      const features=await lookup(query,controller.signal,8);
+      render(features);
+    }catch(err){
+      if(err && err.name==='AbortError') return;
       hide();
     }
   }
 
-  const queue = () => {
+  const queue=()=>{
     clearTimeout(timer);
-    timer = setTimeout(searchAddress, 320);
+    timer=setTimeout(searchAddress,350);
   };
 
-  address.addEventListener('input', queue);
-  postcode.addEventListener('input', queue);
-  address.addEventListener('focus', () => {
-    if (box.childElementCount) box.classList.add('open');
+  const queueVerify=()=>{
+    clearTimeout(verifyTimer);
+    verifyTimer=setTimeout(()=>{
+      if(address.dataset.verified!=='1') verifyTypedAddress();
+    },550);
+  };
+
+  address.addEventListener('input',()=>{
+    markDirty();
+    queue();
+  });
+  postcode.addEventListener('input',()=>{
+    markDirty();
+    queue();
+  });
+
+  address.addEventListener('change',()=>{
+    if(address.dataset.verified!=='1') queueVerify();
+  });
+  address.addEventListener('blur',()=>{
+    if(address.dataset.verified!=='1') queueVerify();
+  });
+
+  address.addEventListener('focus',()=>{
+    if(box.childElementCount) box.classList.add('open');
     else queue();
   });
-  postcode.addEventListener('focus', queue);
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.address-autocomplete-wrap')) hide();
+  postcode.addEventListener('focus',queue);
+
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.address-autocomplete-wrap')) hide();
   });
-  address.addEventListener('keydown', e => {
-    if (e.key === 'Escape') hide();
+
+  address.addEventListener('keydown',e=>{
+    if(e.key==='Escape') hide();
   });
+
+  form.addEventListener('submit',async e=>{
+    if(submitBypass) return;
+    if(address.dataset.verified==='1') return;
+    if(address.dataset.verificationState==='unverified' && confirmUnverified && confirmUnverified.checked) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const ok=await verifyTypedAddress();
+    if(ok){
+      submitBypass=true;
+      form.requestSubmit();
+      setTimeout(()=>{submitBypass=false;},0);
+      return;
+    }
+
+    showUnverified();
+    if(warning) warning.scrollIntoView({behavior:'smooth',block:'center'});
+  },true);
 })();
 </script>
 '''
