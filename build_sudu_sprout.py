@@ -130,23 +130,13 @@ s=s.replace(
 # Add recurring delivery preferences and customer research fields.
 delivery_fields = '''
       <label class="full">Delivery area
-        <select name="deliveryArea" id="deliveryArea" required>
-          <option value="">Select your delivery area</option>
-          <optgroup label="Free delivery">
-            <option>Kepong</option>
-            <option>Menjalara</option>
-            <option>Desa ParkCity</option>
-            <option>Maluri</option>
-            <option>Ativo Plaza</option>
-            <option>Publika</option>
-            <option>Mont Kiara</option>
-          </optgroup>
-          <optgroup label="RM5 per delivery day">
-            <option>Damansara Heights</option>
-            <option>Bangsar</option>
-          </optgroup>
-        </select>
-        <small id="deliveryCoverage" class="address-help">Free delivery: Kepong, Menjalara, Desa ParkCity, Maluri, Ativo Plaza, Publika and Mont Kiara. Damansara Heights and Bangsar are RM5 per delivery day. Outside these areas? WhatsApp us first to check delivery availability.</small>
+        <input name="deliveryArea" id="deliveryArea" readonly aria-readonly="true" placeholder="Automatically detected from your address">
+        <small id="deliveryCoverage" class="address-help">Your delivery area is set automatically from the address above. It cannot be changed manually.</small>
+        <div id="deliveryOutsideContact" class="delivery-outside-contact" hidden>
+          <strong>We don’t currently deliver to this address online.</strong>
+          <span>Please contact us on WhatsApp and we’ll check whether we can arrange delivery for you.</span>
+          <a href="https://wa.me/60109131129?text=Hi%20Sudu%20%26%20Sprout%2C%20I%27d%20like%20to%20check%20delivery%20availability%20for%20my%20address." target="_blank" rel="noopener">WHATSAPP US</a>
+        </div>
       </label>
       <label class="full">When would you like to start? · delivery 10AM–1PM
         <input type="date" name="deliveryDate" id="deliveryDate" required>
@@ -202,6 +192,15 @@ address_css = r'''
 .address-warning strong{display:block;color:#8a431d;margin-bottom:4px}
 .address-confirm{display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:#4d443c}
 .address-confirm input{margin-top:3px;flex:0 0 auto}
+#deliveryArea[readonly]{background:#f3f4ef;color:#244b35;font-weight:700;cursor:default;border-color:rgba(36,75,53,.16)}
+#deliveryArea[readonly]::placeholder{color:#8a948e;font-weight:500}
+.delivery-outside-contact{margin-top:10px;padding:13px 14px;border:1px solid rgba(180,85,35,.24);border-radius:12px;background:#fff7ed;color:#71411f;font-size:.78rem;line-height:1.45}
+.delivery-outside-contact[hidden]{display:none}
+.delivery-outside-contact strong,.delivery-outside-contact span{display:block}
+.delivery-outside-contact strong{color:#8a431d;margin-bottom:3px}
+.delivery-outside-contact a{display:inline-flex;margin-top:9px;padding:9px 13px;border-radius:999px;background:#244b35;color:#fff;text-decoration:none;font-weight:800;letter-spacing:.02em}
+.address-verify-status.outside{display:block;background:#fff7ed;color:#71411f;border:1px solid rgba(180,85,35,.24)}
+.address-verify-status.outside a{color:#244b35;font-weight:800}
 '''
 s=s.replace("</style>",address_css+"\n</style>",1)
 
@@ -431,6 +430,7 @@ delivery_js = r'''
   const form = document.getElementById('detailsForm');
   const deliveryDate = document.getElementById('deliveryDate');
   const deliveryTiming = document.getElementById('deliveryTiming');
+  const outsideContact = document.getElementById('deliveryOutsideContact');
   if (!area || !postcode || !feeField || !totalField) return;
 
   function malaysiaNowParts(){
@@ -515,18 +515,17 @@ delivery_js = r'''
     const submit = form && form.querySelector('.portal-submit');
 
     if(!zone){
-      feeField.value='Choose delivery area';
+      const isOutside=area.dataset.addressOutside==='1';
+      feeField.value=isOutside?'Delivery unavailable online':'Awaiting verified address';
       totalField.value='—';
       if(coverage){
-        if(area.dataset.addressOutside==='1'){
-          coverage.textContent='This address appears to be outside our online delivery areas. Please WhatsApp us first to check whether delivery can be arranged.';
-          coverage.style.color='#8a5a16';
-        }else{
-          coverage.textContent='Choose your delivery area to see the applicable delivery charge.';
-          coverage.style.color='#718078';
-        }
+        coverage.textContent=isOutside
+          ? 'This address is outside our current online delivery areas.'
+          : 'Your delivery area will be detected automatically from your address.';
+        coverage.style.color=isOutside?'#8a5a16':'#718078';
       }
-      if(submit) submit.disabled=false;
+      if(outsideContact) outsideContact.hidden=!isOutside;
+      if(submit) submit.disabled=isOutside;
       return;
     }
 
@@ -535,16 +534,15 @@ delivery_js = r'''
     totalField.value=money(subtotal+fee);
     if(coverage){
       coverage.textContent=fee===0
-        ? '✓ Free delivery to '+selected+'.'
-        : '✓ '+selected+' delivery is RM5 per delivery day.';
+        ? '✓ Delivery area detected: '+selected+' · Free delivery.'
+        : '✓ Delivery area detected: '+selected+' · RM5 per delivery day.';
       coverage.style.color='#244b35';
     }
+    if(outsideContact) outsideContact.hidden=true;
     if(submit) submit.disabled=false;
   }
 
-  area.addEventListener('change', e => {
-    if(area.value) area.dataset.addressOutside='';
-    if(e && e.isTrusted) area.dataset.autoArea='';
+  area.addEventListener('change', () => {
     updateDeliveryEstimate();
   });
   postcode.addEventListener('change', updateDeliveryEstimate);
@@ -822,6 +820,12 @@ address_js = r'''
     status.className = 'address-verify-status';
   }
 
+  function showOutsideStatus(){
+    if (!status) return;
+    status.innerHTML='✓ Address found, but it is outside our current online delivery areas. <a href="https://wa.me/60109131129?text=Hi%20Sudu%20%26%20Sprout%2C%20I%27d%20like%20to%20check%20delivery%20availability%20for%20my%20address." target="_blank" rel="noopener">Contact us on WhatsApp</a> to check whether delivery can be arranged.';
+    status.className='address-verify-status outside';
+  }
+
   function markDirty(){
     address.dataset.verified = '0';
     address.dataset.verificationState = 'unknown';
@@ -857,9 +861,9 @@ address_js = r'''
     postcode.dispatchEvent(new Event('change',{bubbles:true}));
 
     if (matchedArea) {
-      showStatus('✓ Address verified. Delivery area set to '+matchedArea+'.');
+      showStatus('✓ Address verified. Delivery area set automatically to '+matchedArea+'.');
     } else {
-      showStatus('✓ Address found. This location is outside our online delivery areas — please WhatsApp us first to arrange delivery.');
+      showOutsideStatus();
     }
   }
 
@@ -1058,18 +1062,40 @@ address_js = r'''
   });
 
   form.addEventListener('submit',async e=>{
+    const outside=area.dataset.addressOutside==='1' || (address.dataset.verified==='1' && !area.value);
+    if(outside){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showOutsideStatus();
+      const outsideContact=document.getElementById('deliveryOutsideContact');
+      if(outsideContact){
+        outsideContact.hidden=false;
+        outsideContact.scrollIntoView({behavior:'smooth',block:'center'});
+      }
+      return;
+    }
+
     if (submitBypass) return;
-    if (address.dataset.verified==='1') return;
+    if (address.dataset.verified==='1' && area.value) return;
     if (address.dataset.verificationState==='unverified' && confirmUnverified && confirmUnverified.checked) return;
 
     e.preventDefault();
     e.stopImmediatePropagation();
 
     const ok = await verifyTypedAddress();
-    if (ok) {
+    if (ok && area.value && area.dataset.addressOutside!=='1') {
       submitBypass = true;
       form.requestSubmit();
       setTimeout(()=>{submitBypass=false;},0);
+      return;
+    }
+    if(ok){
+      showOutsideStatus();
+      const outsideContact=document.getElementById('deliveryOutsideContact');
+      if(outsideContact){
+        outsideContact.hidden=false;
+        outsideContact.scrollIntoView({behavior:'smooth',block:'center'});
+      }
       return;
     }
 
