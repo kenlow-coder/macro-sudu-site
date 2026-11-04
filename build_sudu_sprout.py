@@ -1006,6 +1006,216 @@ s=s.replace(
     1
 )
 
+
+# New launch plan structure: 5 meals/week across 1-, 2- or 4-week plans,
+# weekday-only deliveries, and a fixed-menu showcase plus rotating-menu community.
+plan_duration_css = r'''
+<style>
+.menu-community-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 22px;padding:16px 18px;border:1px solid rgba(36,75,53,.14);border-radius:18px;background:#eef3ee;color:#425247}
+.menu-community-banner strong{display:block;color:#244b35;font-size:.98rem;margin-bottom:3px}
+.menu-community-banner p{margin:0;font-size:.82rem;line-height:1.5}
+.menu-community-banner .cta{flex:0 0 auto;padding:10px 14px;white-space:nowrap}
+@media(max-width:700px){.menu-community-banner{flex-direction:column;align-items:stretch}.menu-community-banner .cta{width:100%;text-align:center}}
+</style>
+'''
+s=s.replace('</head>',plan_duration_css+'\n</head>',1)
+
+s=s.replace(
+    'Choose your preferences and box size first, then pick the exact meals you want. Flexible structure inspired by leading prepared-meal subscriptions.',
+    'Choose your preference, protein plan and plan duration first, then pick your meals. Every plan provides 5 meals per week.'
+)
+
+old_count_step = '''<div class="plan-step"><div class="plan-step-head"><span class="step-circle">3</span><div><h3>Select meals per week</h3><p>Your total updates automatically. 6-meal boxes add RM1.00 per meal and 8-meal boxes add RM0.50 per meal; 10+ meals use the standard plan rate.</p></div></div><div class="meal-count-grid">
+        <button type="button" class="count-btn" data-count="6"><strong>6 meals</strong><span class="count-extra">+ RM1.00 / meal</span><span class="per-meal"><del class="count-old">RM29.83</del> <em class="count-new">RM17.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="8"><strong>8 meals</strong><span class="count-extra">+ RM0.50 / meal</span><span class="per-meal"><del class="count-old">RM29.00</del> <em class="count-new">RM17.40/meal</em></span></button>
+        <button type="button" class="count-btn active" data-count="10"><strong>10 meals</strong><span class="per-meal"><del class="count-old">RM28</del> <em class="count-new">RM16.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="12"><strong>12 meals</strong><span class="per-meal"><del class="count-old">RM28</del> <em class="count-new">RM16.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="15"><strong>15 meals</strong><span class="per-meal"><del class="count-old">RM28</del> <em class="count-new">RM16.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="18"><strong>18 meals</strong><span class="per-meal"><del class="count-old">RM28</del> <em class="count-new">RM16.90/meal</em></span></button>
+      </div></div>'''
+new_count_step = '''<div class="plan-step"><div class="plan-step-head"><span class="step-circle">3</span><div><h3>Choose your plan duration</h3><p>All plans provide 5 meals per week. Start with a 1-week trial, or choose 2 or 4 weeks.</p></div></div><div class="meal-count-grid">
+        <button type="button" class="count-btn active" data-count="5"><strong>5 meals</strong><span class="count-extra">1-week trial · promo</span><span class="per-meal"><del class="count-old">RM28.00</del> <em class="count-new">RM16.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="10"><strong>10 meals</strong><span class="count-extra">2 weeks · 5 meals/week</span><span class="per-meal"><del class="count-old">RM28.00</del> <em class="count-new">RM16.90/meal</em></span></button>
+        <button type="button" class="count-btn" data-count="20"><strong>20 meals</strong><span class="count-extra">4 weeks · 5 meals/week</span><span class="per-meal"><del class="count-old">RM28.00</del> <em class="count-new">RM16.90/meal</em></span></button>
+      </div></div>'''
+if old_count_step not in s:
+    raise RuntimeError("Could not find old meal-count step")
+s=s.replace(old_count_step,new_count_step,1)
+
+s=s.replace(
+    '<div class="selected-plan-label"><span>Selected plan</span><strong id="sumPlan">Standard</strong></div>',
+    '<div class="selected-plan-label"><span>Selected plan</span><strong id="sumPlan">Standard</strong></div><div class="selected-plan-label"><span>Plan duration</span><strong id="sumDuration">1 week · 5 meals</strong></div>'
+)
+s=s.replace('<div class="price-line"><span>Main meals (<b id="sumCount">10</b>)</span>','<div class="price-line"><span>Meals in plan (<b id="sumCount">5</b>)</span>')
+s=s.replace('<div class="price-line total"><span>Weekly total</span>','<div class="price-line total"><span>Meal plan total</span>')
+s=s.replace('<span id="boxProgress" aria-live="polite">0 / 10</span>','<span id="boxProgress" aria-live="polite">0 / 5</span>')
+s=s.replace('<del id="boxOldPrice">RM280.00</del> <strong id="boxNewPrice">RM169.00</strong>','<del id="boxOldPrice">RM140.00</del> <strong id="boxNewPrice">RM84.50</strong>')
+
+s=s.replace(
+    "let selectedPlan='standard', selectedPref='balanced', targetMeals=10, selectedMeals=0, gateComplete=false;",
+    "let selectedPlan='standard', selectedPref='balanced', targetMeals=5, selectedMeals=0, gateComplete=false;"
+)
+s=s.replace(
+    "const mealCountSurcharge=count=>count===6?1.00:(count===8?0.50:0);",
+    "const mealCountSurcharge=count=>0;\n  const DURATION_WEEKS={5:1,10:2,20:4};\n  const planDurationWeeks=()=>DURATION_WEEKS[targetMeals]||1;"
+)
+s=s.replace(
+    "const extra=mealCountSurcharge(targetMeals);\n    $('#summaryNote').textContent=plan.name+' plan: '+plan.description+' Launch price is '+money(launch)+' per meal with the introductory launch offer'+(extra?' (includes '+money(extra)+' per-meal small-box surcharge).':'.');",
+    "const weeks=planDurationWeeks();\n    const trialNote=(selectedPlan==='standard' && targetMeals===5)?' Soft-launch trial promo: RM16.90 per meal.':'';\n    $('#summaryNote').textContent=plan.name+' plan · '+weeks+' week'+(weeks>1?'s':'')+' · 5 meals per week. '+plan.description+trialNote;"
+)
+s=s.replace(
+    "$('#sumCount').textContent=targetMeals;",
+    "$('#sumCount').textContent=targetMeals;\n    const weeks=planDurationWeeks();\n    const durationEl=$('#sumDuration');\n    if(durationEl) durationEl.textContent=weeks+' week'+(weeks>1?'s':'')+' · '+targetMeals+' meals';"
+)
+
+# Add duration to local saved data and confirmation messaging.
+s=s.replace("data.mealCount=targetMeals;","data.mealCount=targetMeals;\n    data.durationWeeks=planDurationWeeks();",1)
+s=s.replace(
+    "mealCount:targetMeals,\n        pricePerMeal:effectiveLaunch(),",
+    "mealCount:targetMeals,\n        durationWeeks:planDurationWeeks(),\n        pricePerMeal:effectiveLaunch(),"
+)
+s=s.replace(
+    "$('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' subscription order '+result.order_number+' has been received. Your first delivery is '+deliveryDateText+' between 10AM–1PM.'+quoteNote;",
+    "const weeks=result.duration_weeks || planDurationWeeks();\n      $('#successText').textContent='Thanks, '+data.name+'. Your '+currentPlan().name+' '+weeks+'-week meal plan order '+result.order_number+' has been received. Your first weekday delivery is '+deliveryDateText+' between 10AM–1PM.'+quoteNote;"
+)
+
+# Weekday-only date selection while preserving the existing 3-day / 6 PM cutoff.
+old_date_rules = '''  function minEligibleStartDate(){
+    const p=malaysiaNowParts();
+    const daysAhead=(p.hour<18 || (p.hour===18 && p.minute===0 && p.second===0)) ? 3 : 4;
+    const d=new Date(Date.UTC(p.year,p.month-1,p.day)+daysAhead*86400000);
+    return d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate());
+  }
+
+  function cutoffForDate(dateString){
+    const cutoff=new Date(dateString+'T18:00:00+08:00');
+    cutoff.setTime(cutoff.getTime()-3*86400000);
+    return cutoff;
+  }
+
+  function refreshStartDateRules(){
+    if(!deliveryDate) return;
+    const minDate=minEligibleStartDate();
+    deliveryDate.min=minDate;
+    if(deliveryDate.value && deliveryDate.value<minDate) deliveryDate.value='';
+    updateDeliveryTiming();
+  }'''
+new_date_rules = '''  function cutoffForDate(dateString){
+    const cutoff=new Date(dateString+'T18:00:00+08:00');
+    cutoff.setTime(cutoff.getTime()-3*86400000);
+    return cutoff;
+  }
+
+  function isWeekdayDate(dateString){
+    const d=new Date(dateString+'T12:00:00+08:00');
+    const day=d.getDay();
+    return day>=1 && day<=5;
+  }
+
+  function minEligibleStartDate(){
+    const p=malaysiaNowParts();
+    const base=Date.UTC(p.year,p.month-1,p.day);
+    for(let offset=0;offset<=14;offset++){
+      const d=new Date(base+offset*86400000);
+      const day=d.getUTCDay();
+      if(day===0 || day===6) continue;
+      const ds=d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate());
+      if(Date.now()<=cutoffForDate(ds).getTime()) return ds;
+    }
+    return '';
+  }
+
+  function refreshStartDateRules(){
+    if(!deliveryDate) return;
+    const minDate=minEligibleStartDate();
+    deliveryDate.min=minDate;
+    if(deliveryDate.value && !isWeekdayDate(deliveryDate.value)){
+      deliveryDate.setCustomValidity('We deliver Monday to Friday only. Please choose a weekday.');
+      if(deliveryTiming) deliveryTiming.textContent='Weekend delivery is not available. Please choose Monday to Friday.';
+      deliveryDate.reportValidity();
+      deliveryDate.value='';
+      return;
+    }
+    deliveryDate.setCustomValidity('');
+    if(deliveryDate.value && deliveryDate.value<minDate) deliveryDate.value='';
+    updateDeliveryTiming();
+  }'''
+if old_date_rules not in s:
+    raise RuntimeError("Could not find delivery-date rules")
+s=s.replace(old_date_rules,new_date_rules,1)
+
+s=s.replace(
+    "deliveryTiming.textContent='Earliest available delivery: '+earliestText+' between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.';",
+    "deliveryTiming.textContent='Earliest available weekday delivery: '+earliestText+' between 10AM–1PM. We deliver Monday–Friday only. Orders close at 6:00 PM, three calendar days before delivery.';"
+)
+s=s.replace(
+    "deliveryTiming.textContent='Delivery: '+selectedText+' between 10AM–1PM · order cutoff: '+cutoffText+'. Weekly deliveries will continue on the same weekday.';",
+    "deliveryTiming.textContent='Weekday delivery: '+selectedText+' between 10AM–1PM · order cutoff: '+cutoffText+'. Future deliveries continue weekly on the same weekday for your plan duration.';"
+)
+
+# Delivery fees are charged once per weekly delivery across the selected duration.
+old_fee_calc = '''    const fee=Number(zone.fee||0);
+    feeField.value=fee===0?'FREE':money(fee)+' / delivery day';
+    totalField.value=money(subtotal+fee);
+    if(coverage){
+      coverage.textContent=fee===0
+        ? '✓ Free delivery to '+selected+'.'
+        : '✓ '+selected+' delivery is RM5 per delivery day.';
+      coverage.style.color='#244b35';
+    }'''
+new_fee_calc = '''    const fee=Number(zone.fee||0);
+    const planMeals=Number(countEl && countEl.textContent || 5);
+    const deliveries=({5:1,10:2,20:4})[planMeals] || 1;
+    const deliveryTotal=fee*deliveries;
+    feeField.value=fee===0?'FREE':money(deliveryTotal)+' total ('+money(fee)+' × '+deliveries+' delivery'+(deliveries>1?'ies':'')+')';
+    totalField.value=money(subtotal+deliveryTotal);
+    if(coverage){
+      coverage.textContent=fee===0
+        ? '✓ Free delivery to '+selected+' for all '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.'
+        : '✓ '+selected+' is RM5 per delivery × '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.';
+      coverage.style.color='#244b35';
+    }'''
+if old_fee_calc not in s:
+    raise RuntimeError("Could not find delivery fee calculator")
+s=s.replace(old_fee_calc,new_fee_calc,1)
+
+# Update plan/delivery copy everywhere.
+s=s.replace(
+    '<strong style="color:#244b35">Weekly meal plan:</strong> choose the date you would like to start. We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery, so unavailable dates are disabled automatically. Weekly deliveries then continue on the same weekday. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt. If your area is not listed, WhatsApp us first before ordering online.',
+    '<strong style="color:#244b35">Meal plan:</strong> every plan includes 5 meals per week. Choose a 1-week trial, 2-week plan or 4-week plan and select your first weekday delivery date. We deliver Monday–Friday between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery. Future deliveries continue weekly on the same weekday for the duration of your plan. No automatic payment is taken; each order is confirmed after we verify your bank-transfer receipt.'
+)
+s=s.replace('Delivery available daily from 10AM–1PM across our listed areas.','Delivery available Monday–Friday from 10AM–1PM across our listed areas.')
+s=s.replace('We deliver fresh chilled meals daily between <strong>10AM–1PM</strong>.','We deliver fresh chilled meals <strong>Monday–Friday between 10AM–1PM</strong>.')
+s=s.replace('We deliver between <strong>10AM–1PM</strong>.','We deliver <strong>Monday–Friday between 10AM–1PM</strong>.')
+s=s.replace('We deliver every morning, Monday–Sunday. Orders close at 6:00 PM, three calendar days before delivery.','We deliver Monday–Friday between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.')
+
+# Menu becomes a showcase for core meals, with rotating-menu macros in WhatsApp Community.
+old_menu_head = '<section id="menu"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Choose your meals</span><h2>Fill your box with favourites.</h2></div><p>Each meal shows the full macro breakdown. Your per-meal price follows the Standard, Signature or High Protein plan selected above.</p></div>'
+new_menu_head = '''<section id="menu"><div class="wrap"><div class="section-head"><div><span class="eyebrow">Our menu</span><h2>Core favourites + rotating weekly menus.</h2></div><p>Browse our fixed showcase meals and their macros below. We also have 30+ additional dishes that rotate through the menu.</p></div><div class="menu-community-banner"><div><strong>Want the full rotating menu?</strong><p>Join the Sudu &amp; Sprout WhatsApp Community for the current weekly rotation and macro breakdowns for our rotating meals.</p></div><a class="cta" href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">VIEW ROTATING MENU + MACROS</a></div>'''
+if old_menu_head not in s:
+    raise RuntimeError("Could not find menu heading")
+s=s.replace(old_menu_head,new_menu_head,1)
+
+# FAQ reflects the new three plan lengths and current menu model.
+s=s.replace(
+    '<div class="faq-answer">Current box sizes are <strong>6, 8, 10, 12, 15 or 18 meals</strong>. Smaller boxes have a small per-meal surcharge, while boxes of 10 meals or more use the standard plan rate shown on the website.</div>',
+    '<div class="faq-answer">Choose <strong>5 meals for a 1-week trial, 10 meals for 2 weeks, or 20 meals for 4 weeks</strong>. Every option works out to 5 meals per week. The Standard 5-meal trial is currently promoted at <strong>RM16.90 per meal</strong>.</div>'
+)
+s=s.replace(
+    '<div class="faq-answer">Yes. After choosing your meal preference, plan and box size, you can select the meals you want from the available menu and repeat favourites if you like.</div>',
+    '<div class="faq-answer">Yes. You can choose from the core meals shown on the website and repeat favourites. We also rotate 30+ additional dishes; join our WhatsApp Community to see the current rotation and macro breakdowns.</div>'
+)
+s=s.replace(
+    '<div class="faq-answer">You can choose <strong>Balanced, Meat Only or Vegetarian</strong>. Your preference helps organise the menu experience, while meal availability may vary from week to week.</div>',
+    '<div class="faq-answer">You can currently choose <strong>Balanced or Meat Only</strong>. Vegetarian is planned for later. Meal availability may vary as our rotating menu changes.</div>'
+)
+
+# Make stale plan sizes and weekend-delivery wording fail the build.
+s=s.replace(
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","ordering flow can later be connected to payment"]:',
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:'
+)
+
 # Add varied meal-plan CTAs across the homepage, all leading to the same customisation section.
 section_cta_css = r'''
 <style>
