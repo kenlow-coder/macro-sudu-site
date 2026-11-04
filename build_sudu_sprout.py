@@ -100,7 +100,7 @@ s=s.replace("Professionally cooked, macro-measured meals designed to make health
 # Use clear customisation language in the plan section.
 s=s.replace(
     '<span class="eyebrow">Build your box</span><h2>Create your weekly Sudu & Sprout meal plan.</h2>',
-    '<span class="eyebrow">Your meal plan</span><h2>Customise your weekly Sudu & Sprout meal plan.</h2>'
+    '<span class="eyebrow">Your meal plan</span><h2>Customise your Sudu & Sprout meal plan.</h2>'
 )
 s=s.replace('<h2>Create your first box</h2>','<h2>Customise your meal plan</h2>')
 s=s.replace("© 2026 Sudu & Sprout · Operated by Sudu & Sprout Enterprise","© 2026 Sudu & Sprout · Sudu & Sprout Enterprise")
@@ -153,7 +153,7 @@ delivery_fields = '''
         <small id="deliveryTiming" class="address-help">We deliver Monday–Friday between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.</small>
       </label>
       <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Choose delivery area"></label>
-      <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
+      <label>Estimated plan total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
 '''
 s=re.sub(
     r'(<label>Postcode<input name="postcode" id="detailsPostcode" autocomplete="postal-code" required></label>)',
@@ -1023,6 +1023,10 @@ s=s.replace('</head>',plan_duration_css+'\n</head>',1)
 s=s.replace(
     'Choose your preferences and box size first, then pick the exact meals you want. Flexible structure inspired by leading prepared-meal subscriptions.',
     'Choose your preference, protein plan and plan duration first, then pick your meals. Every plan provides 5 meals per week.'
+)
+s=s.replace(
+    '<div class="plan-kicker"><span class="offer-dot">40% OFF</span> Launching offer applied</div>',
+    '<div class="plan-kicker"><span class="offer-dot">TRIAL PROMO</span> Standard 5-meal trial · RM16.90 / meal</div>'
 )
 
 old_count_step = '''<div class="plan-step"><div class="plan-step-head"><span class="step-circle">3</span><div><h3>Select meals per week</h3><p>Your total updates automatically. 6-meal boxes add RM1.00 per meal and 8-meal boxes add RM0.50 per meal; 10+ meals use the standard plan rate.</p></div></div><div class="meal-count-grid">
