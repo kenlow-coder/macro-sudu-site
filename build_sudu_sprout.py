@@ -212,8 +212,8 @@ new_address = '''<label class="full address-autocomplete-wrap">Delivery address
         <div id="addressVerifyStatus" class="address-verify-status" aria-live="polite"></div>
         <div id="addressUnverifiedWarning" class="address-warning" hidden>
           <strong>We couldn’t verify this exact address.</strong>
-          Please check the house/unit number, street and postcode. If you’re sure the address is correct, you can still continue.
-          <label class="address-confirm"><input type="checkbox" id="confirmUnverifiedAddress"> <span>I’ve checked this address and I’m sure I want to proceed.</span></label>
+          Please check the house/unit number, street and postcode and select an address suggestion. If the address still cannot be matched to one of our delivery areas, please contact us on WhatsApp.
+          <a href="https://wa.me/60109131129?text=Hi%20Sudu%20%26%20Sprout%2C%20I%27d%20like%20to%20check%20delivery%20availability%20for%20my%20address." target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;color:#244b35;font-weight:800">CONTACT US ON WHATSAPP</a>
         </div>
       </label>'''
 if old_address not in s:
@@ -1077,8 +1077,6 @@ address_js = r'''
 
     if (submitBypass) return;
     if (address.dataset.verified==='1' && area.value) return;
-    if (address.dataset.verificationState==='unverified' && confirmUnverified && confirmUnverified.checked) return;
-
     e.preventDefault();
     e.stopImmediatePropagation();
 
