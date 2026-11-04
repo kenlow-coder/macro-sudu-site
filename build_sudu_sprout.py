@@ -1368,10 +1368,11 @@ old_fee_calc = '''    const fee=Number(zone.fee||0);
     totalField.value=money(subtotal+fee);
     if(coverage){
       coverage.textContent=fee===0
-        ? '✓ Free delivery to '+selected+'.'
-        : '✓ '+selected+' delivery is RM5 per delivery day.';
+        ? '✓ Delivery area detected: '+selected+' · Free delivery.'
+        : '✓ Delivery area detected: '+selected+' · RM5 per delivery day.';
       coverage.style.color='#244b35';
-    }'''
+    }
+    if(outsideContact) outsideContact.hidden=true;'''
 new_fee_calc = '''    const fee=Number(zone.fee||0);
     const planMeals=Number(countEl && countEl.textContent || 5);
     const deliveries=({5:1,10:2,20:4})[planMeals] || 1;
@@ -1380,10 +1381,11 @@ new_fee_calc = '''    const fee=Number(zone.fee||0);
     totalField.value=money(subtotal+deliveryTotal);
     if(coverage){
       coverage.textContent=fee===0
-        ? '✓ Free delivery to '+selected+' for all '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.'
-        : '✓ '+selected+' is RM5 per delivery × '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.';
+        ? '✓ Delivery area detected: '+selected+' · Free delivery for all '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.'
+        : '✓ Delivery area detected: '+selected+' · RM5 per delivery × '+deliveries+' delivery'+(deliveries>1?'ies':'')+'.';
       coverage.style.color='#244b35';
-    }'''
+    }
+    if(outsideContact) outsideContact.hidden=true;'''
 if old_fee_calc not in s:
     raise RuntimeError("Could not find delivery fee calculator")
 s=s.replace(old_fee_calc,new_fee_calc,1)
