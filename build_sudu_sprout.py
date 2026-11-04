@@ -183,6 +183,7 @@ address_css = r'''
 .address-suggestion:hover,.address-suggestion:focus{background:#fff8ed;outline:none}
 .address-suggestion strong{display:block;font-size:.86rem;color:#244b35}
 .address-suggestion span{display:block;margin-top:2px;font-size:.74rem;color:#6f7d75}
+.address-suggestion .address-match-note{color:#8a5a16;font-size:.68rem}
 .address-help{display:block;margin-top:6px;font-size:.72rem;color:#718078;line-height:1.35}
 .address-verify-status{display:none;margin-top:8px;padding:9px 11px;border-radius:10px;font-size:.76rem;line-height:1.4}
 .address-verify-status.show{display:block;background:#edf7f0;color:#244b35;border:1px solid rgba(36,75,53,.16)}
@@ -885,7 +886,11 @@ address_js = r'''
     postcode.dispatchEvent(new Event('change',{bubbles:true}));
 
     if (matchedArea) {
-      showStatus('✓ Address verified. Delivery area set automatically to '+matchedArea+'.');
+      const parsedAddress=parseAddressInput(address.value,postcode.value);
+      const houseWasNotMapped=Boolean(parsedAddress.houseNumber && !clean(p.housenumber));
+      showStatus(houseWasNotMapped
+        ? '✓ Street and postcode matched. Your house number was kept as entered. Delivery area set automatically to '+matchedArea+'.'
+        : '✓ Address verified. Delivery area set automatically to '+matchedArea+'.');
     } else {
       showOutsideStatus();
     }
@@ -933,6 +938,13 @@ address_js = r'''
         button.append(main,sub);
       } else {
         button.append(main);
+      }
+
+      if(parsed.houseNumber && !clean(feature?.properties?.housenumber) && clean(feature?.properties?.street)){
+        const note=document.createElement('span');
+        note.className='address-match-note';
+        note.textContent='Street match — your house number will be kept as entered';
+        button.append(note);
       }
 
       button.addEventListener('click',()=>selectFeature(feature,parsed));
@@ -1062,7 +1074,7 @@ address_js = r'''
     const exactHouse=Boolean(house && candidateHouse && house===candidateHouse);
     const exactPostcode=Boolean(requestedPC && pc===requestedPC);
 
-    if(house && !parsed.street) return exactHouse && (!requestedPC || exactPostcode);
+    if(house && !parsed.street) return false;
     if(parsed.street){
       const enoughStreetMatch=overlap>=Math.min(2,streetTokens.length);
       return enoughStreetMatch && (!requestedPC || !pc || exactPostcode);
