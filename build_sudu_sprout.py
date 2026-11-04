@@ -681,6 +681,9 @@ address_js = r'''
   function markDirty(){
     address.dataset.verified='0';
     address.dataset.verificationState='unknown';
+    area.value='';
+    area.dataset.addressOutside='';
+    area.dispatchEvent(new Event('change',{bubbles:true}));
     hideWarning();
     clearStatus();
   }
