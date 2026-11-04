@@ -150,7 +150,7 @@ delivery_fields = '''
       </label>
       <label class="full">When would you like to start? · delivery 10AM–1PM
         <input type="date" name="deliveryDate" id="deliveryDate" required>
-        <small id="deliveryTiming" class="address-help">We deliver daily between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.</small>
+        <small id="deliveryTiming" class="address-help">We deliver Monday–Friday between 10AM–1PM. Orders close at 6:00 PM, three calendar days before delivery.</small>
       </label>
       <label>Delivery fee<input name="deliveryFee" id="deliveryFee" readonly value="Choose delivery area"></label>
       <label>Estimated weekly total<input name="estimatedTotal" id="estimatedTotal" readonly value="—"></label>
@@ -1212,7 +1212,7 @@ s=s.replace(
 
 # Make stale plan sizes and weekend-delivery wording fail the build.
 s=s.replace(
-    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","ordering flow can later be connected to payment"]:',
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:',
     'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:'
 )
 
