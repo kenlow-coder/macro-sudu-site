@@ -1696,5 +1696,44 @@ for req in ["Balanced","Meat Only","Halal ingredients","Sudu & Sprout"]:
 for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","ordering flow can later be connected to payment"]:
     if banned in s: raise RuntimeError("Launch cleanup incomplete: "+banned)
 
+
+# Replace the previous menu cards with the current approved menu and nutrition values.
+updated_menu = '''<section id="menu" class="updated-menu-section">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="eyebrow">Our updated menu</span><h2>Fresh favourites, with macros made clear.</h2></div>
+      <p>Calories and macronutrients are listed per meal.</p>
+    </div>
+    <div class="updated-menu-grid">
+      <article class="updated-menu-card"><h3>Teriyaki Chicken</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>515 kcal</strong></div><div><span>Protein</span><strong>49.8 g</strong></div><div><span>Fat</span><strong>15.6 g</strong></div><div><span>Carbs</span><strong>40.8 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Cajun Chicken</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>467.2 kcal</strong></div><div><span>Protein</span><strong>53 g</strong></div><div><span>Fat</span><strong>12 g</strong></div><div><span>Carbs</span><strong>34 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Korean Protein Bowl</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>469 kcal</strong></div><div><span>Protein</span><strong>39 g</strong></div><div><span>Fat</span><strong>12 g</strong></div><div><span>Carbs</span><strong>47 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Seaweed Prawn Soba Noodles</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>482 kcal</strong></div><div><span>Protein</span><strong>54 g</strong></div><div><span>Fat</span><strong>13 g</strong></div><div><span>Carbs</span><strong>48 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Mackerel Fish</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>390 kcal</strong></div><div><span>Protein</span><strong>26 g</strong></div><div><span>Fat</span><strong>10 g</strong></div><div><span>Carbs</span><strong>36 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Beef Tacos</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>673 kcal</strong></div><div><span>Protein</span><strong>67 g</strong></div><div><span>Fat</span><strong>26 g</strong></div><div><span>Carbs</span><strong>42 g</strong></div></div></article>
+      <article class="updated-menu-card"><h3>Lemon Dill Salmon</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>553 kcal</strong></div><div><span>Protein</span><strong>44 g</strong></div><div><span>Fat</span><strong>23 g</strong></div><div><span>Carbs</span><strong>38 g</strong></div></div></article>
+    </div>
+    <div class="section-plan-cta"><a class="cta" href="#plans">CUSTOMISE YOUR MEAL PLAN</a></div>
+  </div>
+</section>'''
+menu_result = re.subn(r'<section id="menu">.*?</section>', lambda _: updated_menu, s, count=1, flags=re.S)
+if menu_result[1] != 1:
+    raise RuntimeError("Could not replace the previous menu section")
+s = menu_result[0]
+
+updated_menu_css = r'''<style>
+.updated-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.updated-menu-card{padding:22px;border:1px solid rgba(36,75,53,.13);border-radius:20px;background:#fff;box-shadow:0 10px 30px rgba(32,51,41,.045)}
+.updated-menu-card h3{margin:0 0 17px;color:#244b35;font:700 1.2rem/1.25 Georgia,"Times New Roman",serif}
+.updated-menu-macros{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.updated-menu-macros div{display:flex;flex-direction:column;gap:4px;padding:10px 11px;border-radius:12px;background:#f7f7f1}
+.updated-menu-macros span{font-size:.7rem;color:#718078}
+.updated-menu-macros strong{font-size:.95rem;color:#203329;font-variant-numeric:tabular-nums}
+@media(max-width:900px){.updated-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.updated-menu-grid{grid-template-columns:1fr;gap:12px}.updated-menu-card{padding:18px}.updated-menu-macros strong{font-size:.9rem}}
+</style>
+'''
+s=s.replace("</head>",updated_menu_css+"\n</head>",1)
+
 out.write_text(s,encoding="utf-8")
 print("Built",out,out.stat().st_size)
