@@ -186,7 +186,7 @@ s=re.sub(
 # Add Malaysia address autocomplete to the delivery details form.
 address_css = r'''
 .address-autocomplete-wrap{position:relative}
-.address-suggestions{position:absolute;left:0;right:0;top:calc(100% - 18px);z-index:40;display:none;max-height:230px;overflow:auto;background:#fff;border:1px solid rgba(36,75,53,.18);border-radius:12px;box-shadow:0 16px 40px rgba(25,48,34,.16)}
+.address-suggestions{position:relative;z-index:40;display:none;margin-top:6px;max-height:220px;overflow:auto;background:#fff;border:1px solid rgba(36,75,53,.18);border-radius:12px;box-shadow:0 12px 28px rgba(25,48,34,.12)}
 .address-suggestions.open{display:block}
 .address-suggestion{display:block;width:100%;border:0;border-bottom:1px solid rgba(36,75,53,.08);background:#fff;text-align:left;padding:11px 12px;color:#203329;cursor:pointer;font:inherit;line-height:1.35}
 .address-suggestion:last-child{border-bottom:0}
