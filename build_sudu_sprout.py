@@ -673,7 +673,8 @@ address_js = r'''
   }
 
   function dedupeFeatures(features){
-    const seen=new Set();
+    const seenAddress=new Set();
+    const seenGeo=new Set();
     const unique=[];
     for(const feature of malaysiaFeatures(features)){
       const p=feature?.properties || {};
@@ -684,8 +685,13 @@ address_js = r'''
         p.district || p.city || p.county,
         p.state
       ].filter(Boolean).join(' '));
-      if(!key || seen.has(key)) continue;
-      seen.add(key);
+      const coords=feature?.geometry?.coordinates;
+      const geoKey=Array.isArray(coords) && coords.length>=2
+        ? Number(coords[0]).toFixed(4)+','+Number(coords[1]).toFixed(4)
+        : '';
+      if((key && seenAddress.has(key)) || (geoKey && seenGeo.has(geoKey))) continue;
+      if(key) seenAddress.add(key);
+      if(geoKey) seenGeo.add(geoKey);
       unique.push(feature);
     }
     return unique;
