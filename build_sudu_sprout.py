@@ -1220,6 +1220,93 @@ s=s.replace(
     'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:'
 )
 
+
+# Fixed-menu ordering: customers choose meal type, plan and duration only.
+# The menu section is showcase-only; individual dishes are assigned by Sudu & Sprout.
+fixed_menu_css = r'''
+<style>
+.menu-select-bar,.qty-control,.meal-price,.offer-chip,.menu-bottom-checkout{display:none!important}
+.meal-bottom{justify-content:flex-start}
+.fixed-menu-note{margin:0 0 20px;padding:14px 16px;border:1px solid rgba(36,75,53,.14);border-radius:16px;background:#fff8ed;color:#50635a;font-size:.82rem;line-height:1.55}
+.fixed-menu-note strong{color:#244b35}
+</style>
+'''
+s=s.replace('</head>',fixed_menu_css+'\n</head>',1)
+
+# Make Vegetarian fully orderable and explain the fixed-menu model.
+s=s.replace(
+    '<div class="section-head"><div><span class="eyebrow">Your meal plan</span><h2>Customise your Sudu & Sprout meal plan.</h2></div><p>Choose your preference, protein plan and plan duration first, then pick your meals. Every plan provides 5 meals per week.</p></div>',
+    '<div class="section-head"><div><span class="eyebrow">Your meal plan</span><h2>Customise your Sudu & Sprout meal plan.</h2></div><p>Choose your meal type, plan tier and duration. Every plan provides 5 meals per week, with a fixed Sudu & Sprout menu for everyone in that meal type.</p></div>'
+)
+s=s.replace(
+    '<h2>Customise your meal plan</h2><p class="plan-intro">Your selected preferences help organise your experience. You can still browse every available Sudu & Sprout meal each week.</p>',
+    '<h2>Customise your meal plan</h2><p class="plan-intro">You choose the meal type, plan tier and duration. We choose the dishes for each weekly menu, so individual meal selection is not required.</p>'
+)
+s=s.replace(
+    '<div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your meal preference</h3><p>Choose Balanced or Meat Only for the current launch menu. Vegetarian is coming later.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="balanced">Balanced</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegetarian" disabled aria-disabled="true" title="Coming later">Vegetarian · Coming later</button></div></div>',
+    '<div class="plan-step"><div class="plan-step-head"><span class="step-circle">1</span><div><h3>Choose your meal type</h3><p>Choose Balanced, Meat Only or Vegetarian. Each option follows a fixed Sudu & Sprout weekly menu — customers do not select individual dishes.</p></div></div><div class="option-row"><button type="button" class="option-btn pref active" data-pref="balanced">Balanced</button><button type="button" class="option-btn pref" data-pref="meat-only">Meat Only</button><button type="button" class="option-btn pref" data-pref="vegetarian">Vegetarian</button></div></div>'
+)
+
+# Use plan-tier descriptions that work for all meal types, including Vegetarian.
+s=s.replace('Chicken &amp; fish · 40g protein per meal','40g protein target per meal · fixed weekly menu')
+s=s.replace('Seafood, salmon or beef twice per week · 40g protein per meal','Premium rotation · 40g protein target per meal')
+s=s.replace('Seafood, salmon or beef twice per week · 50g protein per meal','Higher-protein rotation · 50g protein target per meal')
+s=s.replace('<span>Protein preference</span><strong id="sumPref">Balanced</strong>','<span>Meal type</span><strong id="sumPref">Balanced</strong>')
+s=s.replace('<button type="button" class="cta summary-cta" id="chooseMealsBtn">SELECT PLAN</button>','<button type="button" class="cta summary-cta" id="chooseMealsBtn">CONTINUE TO CHECKOUT</button>')
+
+# Checkout portals no longer refer to choosing meals.
+s=s.replace('<h3 id="startTitle">Save your plan and choose your meals.</h3>','<h3 id="startTitle">Save your plan and continue to checkout.</h3>')
+s=s.replace('Your plan and chosen meals are already saved below. Complete your details to continue.','Your selected meal type, plan and duration are shown below. Complete your details to continue.')
+
+# Menu is informational only.
+s=s.replace(
+    '<div class="menu-community-banner"><div><strong>Want the full rotating menu?</strong><p>Join the Sudu &amp; Sprout WhatsApp Community for the current weekly rotation and macro breakdowns for our rotating meals.</p></div><a class="cta" href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">VIEW ROTATING MENU + MACROS</a></div>',
+    '<div class="fixed-menu-note"><strong>Menu showcase only.</strong> The meals below show examples of what we cook and their macros. Customers do not choose individual dishes — Sudu &amp; Sprout sets the weekly menu for each meal type. Vegetarian customers receive the fixed vegetarian rotation.</div><div class="menu-community-banner"><div><strong>See the current rotating menu</strong><p>We have 30+ additional dishes that rotate. Join the Sudu &amp; Sprout WhatsApp Community to see the current rotation and macro breakdowns.</p></div><a class="cta" href="https://chat.whatsapp.com/BCWRL470r4TGOHF0WpDmi9" target="_blank" rel="noopener">VIEW ROTATING MENU + MACROS</a></div>'
+)
+
+# Neutral plan descriptions in the JS summary.
+s=s.replace("standard:{name:'Standard',regular:28.00,launch:16.90,description:'Chicken & fish with 40g protein per meal.'}",
+            "standard:{name:'Standard',regular:28.00,launch:16.90,description:'Fixed weekly menu with a 40g protein target per meal.'}")
+s=s.replace("signature:{name:'Signature',regular:31.50,launch:18.90,description:'Seafood, salmon or beef twice per week with 40g protein per meal.'}",
+            "signature:{name:'Signature',regular:31.50,launch:18.90,description:'Premium fixed weekly rotation with a 40g protein target per meal.'}")
+s=s.replace("highprotein:{name:'High Protein',regular:36.50,launch:21.90,description:'Seafood, salmon or beef twice per week with 50g protein per meal.'}",
+            "highprotein:{name:'High Protein',regular:36.50,launch:21.90,description:'Higher-protein fixed weekly rotation with a 50g protein target per meal.'}")
+
+# After the email/postcode gate, go straight to customer details rather than meal selection.
+old_gate = '''    closePortal('startPortal');
+    $('#menu').scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>$('#menu').classList.add('menu-ready'),250);'''
+new_gate = '''    $('#detailsPlan').value=currentPlan().name;
+    $('#orderMini').innerHTML='<strong>'+currentPlan().name+' · '+PREFS[selectedPref]+' · '+targetMeals+' meals · '+planDurationWeeks()+' week'+(planDurationWeeks()>1?'s':'')+' · '+money(targetMeals*effectiveLaunch())+'</strong><br>Fixed Sudu & Sprout menu allocation — individual dish selection is not available.';
+    closePortal('startPortal');
+    openPortal('detailsPortal');'''
+if old_gate not in s:
+    raise RuntimeError("Could not find old start-form meal-selection gate")
+s=s.replace(old_gate,new_gate,1)
+
+# Store a fixed menu allocation locally; backend also records the fixed allocation.
+s=s.replace(
+    "const meals=Object.entries(counts).filter(([,qty])=>qty>0).map(([name,qty])=>({meal_name:name,quantity:qty}));",
+    "const meals=[{meal_name:PREFS[selectedPref]+' fixed menu allocation',quantity:targetMeals}];",
+    1
+)
+
+# FAQ reflects the fixed-menu model and Vegetarian availability.
+s=s.replace(
+    '<div class="faq-answer">Yes. You can choose from the core meals shown on the website and repeat favourites. We also rotate 30+ additional dishes; join our WhatsApp Community to see the current rotation and macro breakdowns.</div>',
+    '<div class="faq-answer"><strong>No.</strong> Sudu &amp; Sprout sets a fixed weekly menu for each meal type so everyone on the same option receives the same rotation. The website menu is a showcase of dishes we make. Join our WhatsApp Community to see the current rotating menu and macros.</div>'
+)
+s=s.replace(
+    '<div class="faq-answer">You can currently choose <strong>Balanced or Meat Only</strong>. Vegetarian is planned for later. Meal availability may vary as our rotating menu changes.</div>',
+    '<div class="faq-answer">You can choose <strong>Balanced, Meat Only or Vegetarian</strong>. Each meal type has its own fixed Sudu &amp; Sprout menu rotation; customers do not select individual dishes.</div>'
+)
+
+# Future-proof against the old selectable-menu / unavailable-vegetarian wording returning.
+s=s.replace(
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","Boost Bank","CHONG KIN HOE","1003 0045 8300","ordering flow can later be connected to payment"]:',
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","Boost Bank","CHONG KIN HOE","1003 0045 8300","Vegetarian · Coming later","then pick your meals","chosen meals are already saved","ordering flow can later be connected to payment"]:'
+)
+
 # Add varied meal-plan CTAs across the homepage, all leading to the same customisation section.
 section_cta_css = r'''
 <style>
