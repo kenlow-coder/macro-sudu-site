@@ -1724,10 +1724,10 @@ if menu_result[1] != 1:
     raise RuntimeError("Could not replace the previous menu section")
 s = menu_result[0]
 
-updated_menu_css = f'''<style>
+updated_menu_css = r'''<style>
 .updated-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:28px}
 .updated-menu-card{min-width:0;overflow:hidden;border:1px solid rgba(36,75,53,.13);border-radius:20px;background:#fffdf8;box-shadow:0 10px 30px rgba(32,51,41,.045)}
-.updated-menu-photo{width:100%;aspect-ratio:220/143;background-image:url("data:image/webp;base64,{menu_sprite_b64}");background-size:400% 200%;background-position:var(--photo-position,0% 0%);background-repeat:no-repeat;background-color:#f6f0e5}
+.updated-menu-photo{width:100%;aspect-ratio:220/143;background-image:url("data:image/webp;base64,__MENU_SPRITE__");background-size:400% 200%;background-position:var(--photo-position,0% 0%);background-repeat:no-repeat;background-color:#f6f0e5}
 .updated-menu-card-body{padding:18px 16px 16px}
 .updated-menu-card h3{min-height:2.5em;margin:0 0 16px;color:#244b35;text-align:center;font:700 1.15rem/1.25 Georgia,"Times New Roman",serif}
 .updated-menu-macros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
@@ -1740,7 +1740,7 @@ updated_menu_css = f'''<style>
 @media(max-width:820px){.updated-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.updated-menu-card-body{padding:16px 12px 14px}}
 @media(max-width:560px){.updated-menu-grid{grid-template-columns:1fr;gap:14px}.updated-menu-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}.updated-menu-photo{height:100%;min-height:180px;aspect-ratio:auto}.updated-menu-card-body{display:flex;flex-direction:column;justify-content:center;padding:14px 10px}.updated-menu-card h3{font-size:1rem;min-height:0;margin-bottom:12px}.updated-menu-macros{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:9px}.updated-menu-macros div:nth-child(2){border-right:0}.updated-menu-macros div:nth-child(3){border-top:1px solid rgba(36,75,53,.14);padding-top:9px}.updated-menu-macros div:nth-child(4){border-top:1px solid rgba(36,75,53,.14);border-right:0;padding-top:9px}.updated-menu-macros strong{font-size:.9rem}}
 </style>
-'''
+'''.replace("__MENU_SPRITE__", menu_sprite_b64)
 s=s.replace("</head>",updated_menu_css+"\n</head>",1)
 
 out.write_text(s,encoding="utf-8")
