@@ -342,9 +342,9 @@ new_submit = r'''  $('#detailsForm').addEventListener('submit',async e=>{
           '<strong style="display:block;font-size:1rem;margin-bottom:8px;color:#173c2d">Bank Transfer Payment</strong>'+
           '<div style="font-size:.88rem;color:#425247;margin-bottom:12px">Please transfer <strong>'+amount+'</strong> using your order ID <strong>'+orderRef+'</strong> as the payment reference where possible.</div>'+
           '<div style="display:grid;grid-template-columns:110px 1fr;gap:5px 12px;font-size:.9rem;margin-bottom:14px">'+
-            '<span style="color:#6a746c">Bank</span><strong>Boost Bank</strong>'+
-            '<span style="color:#6a746c">Account name</span><strong>CHONG KIN HOE</strong>'+
-            '<span style="color:#6a746c">Account no.</span><strong>1003 0045 8300</strong>'+
+            '<span style="color:#6a746c">Bank</span><strong>Public Bank</strong>'+
+            '<span style="color:#6a746c">Account name</span><strong>Sudu &amp; Sprout Enterprise</strong>'+
+            '<span style="color:#6a746c">Account no.</span><strong>3826341918</strong>'+
             '<span style="color:#6a746c">Amount</span><strong>'+amount+'</strong>'+
             '<span style="color:#6a746c">Reference</span><strong>'+orderRef+'</strong>'+
           '</div>'+
@@ -1216,7 +1216,7 @@ s=s.replace(
 
 # Make stale plan sizes and weekend-delivery wording fail the build.
 s=s.replace(
-    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:',
+    'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","Boost Bank","CHONG KIN HOE","1003 0045 8300","ordering flow can later be connected to payment"]:',
     'for banned in ["Sample review 01","prototype order draft","auto-renews each week","Meal selections close at 6:00 PM","two calendar days before delivery","Preferred weekly delivery day","Sungai Buloh","RM5 per meal","selected postcodes in Kepong","<option>Other area</option>","WHATSAPP FOR DELIVERY QUOTE","future Terms &amp; Privacy Policy","No payment is taken in this prototype","6, 8, 10, 12, 15 or 18 meals","Select meals per week","We deliver daily between","ordering flow can later be connected to payment"]:'
 )
 
