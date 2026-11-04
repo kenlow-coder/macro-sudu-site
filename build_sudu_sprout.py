@@ -9,6 +9,9 @@ emblem_b64 = Path("assets/brand/sudu-sprout-emblem.b64").read_text(encoding="asc
 wordmark_b64 = Path("assets/brand/sudu-sprout-wordmark.b64").read_text(encoding="ascii").strip()
 favicon_b64 = Path("assets/brand/sudu-sprout-favicon.b64").read_text(encoding="ascii").strip()
 favicon_ico_b64 = Path("assets/brand/sudu-sprout-favicon-ico.b64").read_text(encoding="ascii").strip()
+menu_sprite_b64 = "".join(Path(f"assets/menu-food-sprite.b64.{i:02d}").read_text(encoding="ascii").strip() for i in range(8))
+if len(menu_sprite_b64) != 38940:
+    raise RuntimeError("Menu food sprite is incomplete")
 emblem_uri = "data:image/png;base64," + emblem_b64
 wordmark_uri = "data:image/png;base64," + wordmark_b64
 
@@ -1700,18 +1703,18 @@ for banned in ["Sample review 01","prototype order draft","auto-renews each week
 # Replace the previous menu cards with the current approved menu and nutrition values.
 updated_menu = '''<section id="menu" class="updated-menu-section">
   <div class="wrap">
-    <div class="section-head">
-      <div><span class="eyebrow">Our updated menu</span><h2>Fresh favourites, with macros made clear.</h2></div>
+    <div class="section-head updated-menu-heading">
+      <div><span class="eyebrow">Our menu</span><h2>Macro meals, real ingredients.</h2></div>
       <p>Calories and macronutrients are listed per meal.</p>
     </div>
     <div class="updated-menu-grid">
-      <article class="updated-menu-card"><h3>Teriyaki Chicken</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>515 kcal</strong></div><div><span>Protein</span><strong>49.8 g</strong></div><div><span>Fat</span><strong>15.6 g</strong></div><div><span>Carbs</span><strong>40.8 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Cajun Chicken</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>467.2 kcal</strong></div><div><span>Protein</span><strong>53 g</strong></div><div><span>Fat</span><strong>12 g</strong></div><div><span>Carbs</span><strong>34 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Korean Protein Bowl</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>469 kcal</strong></div><div><span>Protein</span><strong>39 g</strong></div><div><span>Fat</span><strong>12 g</strong></div><div><span>Carbs</span><strong>47 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Seaweed Prawn Soba Noodles</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>482 kcal</strong></div><div><span>Protein</span><strong>54 g</strong></div><div><span>Fat</span><strong>13 g</strong></div><div><span>Carbs</span><strong>48 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Mackerel Fish</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>390 kcal</strong></div><div><span>Protein</span><strong>26 g</strong></div><div><span>Fat</span><strong>10 g</strong></div><div><span>Carbs</span><strong>36 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Beef Tacos</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>673 kcal</strong></div><div><span>Protein</span><strong>67 g</strong></div><div><span>Fat</span><strong>26 g</strong></div><div><span>Carbs</span><strong>42 g</strong></div></div></article>
-      <article class="updated-menu-card"><h3>Lemon Dill Salmon</h3><div class="updated-menu-macros"><div><span>Calories</span><strong>553 kcal</strong></div><div><span>Protein</span><strong>44 g</strong></div><div><span>Fat</span><strong>23 g</strong></div><div><span>Carbs</span><strong>38 g</strong></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Teriyaki Chicken in an open sugarcane-fibre tray" style="--photo-position:0% 0%"></div><div class="updated-menu-card-body"><h3>Teriyaki Chicken</h3><div class="updated-menu-macros"><div><strong>515</strong><span>kcal</span></div><div><strong>49.8g</strong><span>protein</span></div><div><strong>15.6g</strong><span>fat</span></div><div><strong>40.8g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Cajun Chicken in an open sugarcane-fibre tray" style="--photo-position:33.3333% 0%"></div><div class="updated-menu-card-body"><h3>Cajun Chicken</h3><div class="updated-menu-macros"><div><strong>467</strong><span>kcal</span></div><div><strong>53g</strong><span>protein</span></div><div><strong>12g</strong><span>fat</span></div><div><strong>34g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Korean Protein Bowl in an open sugarcane-fibre tray" style="--photo-position:66.6667% 0%"></div><div class="updated-menu-card-body"><h3>Korean Protein Bowl</h3><div class="updated-menu-macros"><div><strong>469</strong><span>kcal</span></div><div><strong>39g</strong><span>protein</span></div><div><strong>12g</strong><span>fat</span></div><div><strong>47g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Seaweed Prawn Soba Noodles in an open sugarcane-fibre tray" style="--photo-position:100% 0%"></div><div class="updated-menu-card-body"><h3>Seaweed Prawn Soba Noodles</h3><div class="updated-menu-macros"><div><strong>482</strong><span>kcal</span></div><div><strong>54g</strong><span>protein</span></div><div><strong>13g</strong><span>fat</span></div><div><strong>48g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Mackerel Fish in an open sugarcane-fibre tray" style="--photo-position:0% 100%"></div><div class="updated-menu-card-body"><h3>Mackerel Fish</h3><div class="updated-menu-macros"><div><strong>390</strong><span>kcal</span></div><div><strong>26g</strong><span>protein</span></div><div><strong>10g</strong><span>fat</span></div><div><strong>36g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Beef Tacos in an open sugarcane-fibre tray" style="--photo-position:33.3333% 100%"></div><div class="updated-menu-card-body"><h3>Beef Tacos</h3><div class="updated-menu-macros"><div><strong>673</strong><span>kcal</span></div><div><strong>67g</strong><span>protein</span></div><div><strong>26g</strong><span>fat</span></div><div><strong>42g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Lemon Dill Salmon in an open sugarcane-fibre tray" style="--photo-position:66.6667% 100%"></div><div class="updated-menu-card-body"><h3>Lemon Dill Salmon</h3><div class="updated-menu-macros"><div><strong>553</strong><span>kcal</span></div><div><strong>44g</strong><span>protein</span></div><div><strong>23g</strong><span>fat</span></div><div><strong>38g</strong><span>carbs</span></div></div></div></article>
     </div>
     <div class="section-plan-cta"><a class="cta" href="#plans">CUSTOMISE YOUR MEAL PLAN</a></div>
   </div>
@@ -1721,16 +1724,21 @@ if menu_result[1] != 1:
     raise RuntimeError("Could not replace the previous menu section")
 s = menu_result[0]
 
-updated_menu_css = r'''<style>
-.updated-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
-.updated-menu-card{padding:22px;border:1px solid rgba(36,75,53,.13);border-radius:20px;background:#fff;box-shadow:0 10px 30px rgba(32,51,41,.045)}
-.updated-menu-card h3{margin:0 0 17px;color:#244b35;font:700 1.2rem/1.25 Georgia,"Times New Roman",serif}
-.updated-menu-macros{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.updated-menu-macros div{display:flex;flex-direction:column;gap:4px;padding:10px 11px;border-radius:12px;background:#f7f7f1}
-.updated-menu-macros span{font-size:.7rem;color:#718078}
-.updated-menu-macros strong{font-size:.95rem;color:#203329;font-variant-numeric:tabular-nums}
-@media(max-width:900px){.updated-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){.updated-menu-grid{grid-template-columns:1fr;gap:12px}.updated-menu-card{padding:18px}.updated-menu-macros strong{font-size:.9rem}}
+updated_menu_css = f'''<style>
+.updated-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:28px}
+.updated-menu-card{min-width:0;overflow:hidden;border:1px solid rgba(36,75,53,.13);border-radius:20px;background:#fffdf8;box-shadow:0 10px 30px rgba(32,51,41,.045)}
+.updated-menu-photo{width:100%;aspect-ratio:220/143;background-image:url("data:image/webp;base64,{menu_sprite_b64}");background-size:400% 200%;background-position:var(--photo-position,0% 0%);background-repeat:no-repeat;background-color:#f6f0e5}
+.updated-menu-card-body{padding:18px 16px 16px}
+.updated-menu-card h3{min-height:2.5em;margin:0 0 16px;color:#244b35;text-align:center;font:700 1.15rem/1.25 Georgia,"Times New Roman",serif}
+.updated-menu-macros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.updated-menu-macros div{display:flex;min-width:0;flex-direction:column;align-items:center;gap:5px;padding:4px 2px;border-right:1px solid rgba(36,75,53,.18)}
+.updated-menu-macros div:last-child{border-right:0}
+.updated-menu-macros span{font-size:.7rem;color:#718078;text-align:center}
+.updated-menu-macros strong{font-size:.94rem;color:#203329;font-variant-numeric:tabular-nums;white-space:nowrap}
+.updated-menu-heading{align-items:end}
+@media(max-width:1100px){.updated-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:820px){.updated-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.updated-menu-card-body{padding:16px 12px 14px}}
+@media(max-width:560px){.updated-menu-grid{grid-template-columns:1fr;gap:14px}.updated-menu-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}.updated-menu-photo{height:100%;min-height:180px;aspect-ratio:auto}.updated-menu-card-body{display:flex;flex-direction:column;justify-content:center;padding:14px 10px}.updated-menu-card h3{font-size:1rem;min-height:0;margin-bottom:12px}.updated-menu-macros{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:9px}.updated-menu-macros div:nth-child(2){border-right:0}.updated-menu-macros div:nth-child(3){border-top:1px solid rgba(36,75,53,.14);padding-top:9px}.updated-menu-macros div:nth-child(4){border-top:1px solid rgba(36,75,53,.14);border-right:0;padding-top:9px}.updated-menu-macros strong{font-size:.9rem}}
 </style>
 '''
 s=s.replace("</head>",updated_menu_css+"\n</head>",1)
