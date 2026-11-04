@@ -613,15 +613,38 @@ address_js = r'''
     return !cc || cc === 'my' || country === 'malaysia';
   });
 
-  function formatFeature(feature){
+  function parseAddressInput(addressText, postcodeText){
+    const raw=clean(addressText);
+    let postcode=clean(postcodeText).match(/\b\d{5}\b/)?.[0] || '';
+    if(!postcode) postcode=raw.match(/\b\d{5}\b/)?.[0] || '';
+
+    let line=raw
+      .replace(/\b\d{5}\b/g,' ')
+      .replace(/\bmalaysia\b/ig,' ')
+      .replace(/[;,]+/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+
+    const match=line.match(/^(?:no\.?\s*)?((?:[a-z]\s*-\s*)?\d+[a-z]?(?:[-/]\d+[a-z0-9]?)?)\b[\s,]*(.*)$/i);
+    const houseNumber=match ? match[1].replace(/\s+/g,'') : '';
+    const street=match ? clean(match[2]) : line;
+    return {raw,postcode,houseNumber,street};
+  }
+
+  function numberKey(value){
+    return normalize(value).replace(/[^a-z0-9]/g,'');
+  }
+
+  function formatFeature(feature, parsed=parseAddressInput('', '')){
     const p = feature?.properties || {};
     const house = clean(p.housenumber);
     const street = clean(p.street);
     const name = clean(p.name);
+    const displayHouse = house || (street ? parsed.houseNumber : '');
 
     let primary = '';
     if (street) {
-      primary = compactParts([house, street]).join(' ');
+      primary = compactParts([displayHouse, street]).join(' ');
     } else if (name) {
       primary = compactParts([house, name]).join(' ');
     }
@@ -636,7 +659,7 @@ address_js = r'''
       p.district,
       p.city || p.county,
       p.state,
-      p.postcode
+      p.postcode || parsed.postcode
     ]);
 
     if (!primary && secondary.length) primary = secondary.shift();
@@ -772,17 +795,18 @@ address_js = r'''
     return '';
   }
 
-  function dedupeFeatures(features){
+  function dedupeFeatures(features, parsed=parseAddressInput('', '')){
     const seen = new Set();
     const seenGeo = new Set();
     const unique = [];
     for (const feature of malaysiaFeatures(features)) {
       const p = feature?.properties || {};
-      const formatted = formatFeature(feature);
+      const formatted = formatFeature(feature,parsed);
       const primaryKey = normalize(formatted.primary);
-      const pc = clean(p.postcode);
+      const pc = clean(p.postcode || parsed.postcode);
+      const houseKey = numberKey(p.housenumber || parsed.houseNumber);
       const displayKey = primaryKey
-        ? primaryKey+'|'+pc
+        ? primaryKey+'|'+pc+'|'+houseKey
         : normalize(formatted.full);
 
       const coords = feature?.geometry?.coordinates;
@@ -874,10 +898,10 @@ address_js = r'''
     if (warning) warning.hidden = false;
   }
 
-  function selectFeature(feature){
-    const formatted = formatFeature(feature);
+  function selectFeature(feature, parsed=parseAddressInput(address.value,postcode.value)){
+    const formatted = formatFeature(feature,parsed);
     const p = feature?.properties || {};
-    const pc = clean(p.postcode);
+    const pc = clean(p.postcode) || parsed.postcode;
 
     address.value = formatted.full || formatted.primary;
     if (pc) postcode.value = pc;
@@ -886,13 +910,13 @@ address_js = r'''
     markVerified(feature);
   }
 
-  function render(features){
+  function render(features, parsed){
     hide();
-    const malaysia = dedupeFeatures(features).slice(0,5);
+    const malaysia = rankFeatures(features,parsed).slice(0,5);
     if (!malaysia.length) return;
 
     malaysia.forEach(feature => {
-      const formatted = formatFeature(feature);
+      const formatted = formatFeature(feature,parsed);
       if (!formatted.full) return;
 
       const button = document.createElement('button');
@@ -911,7 +935,7 @@ address_js = r'''
         button.append(main);
       }
 
-      button.addEventListener('click',()=>selectFeature(feature));
+      button.addEventListener('click',()=>selectFeature(feature,parsed));
       box.appendChild(button);
     });
 
@@ -927,87 +951,183 @@ address_js = r'''
     return malaysiaFeatures(data.features);
   }
 
+  function buildAddressQueries(parsed){
+    const queries=[];
+    const add=value=>{
+      const query=clean(value).replace(/\s+/g,' ');
+      if(query && !queries.some(q=>normalize(q)===normalize(query))) queries.push(query);
+    };
+    const suffix=parsed.postcode ? ', '+parsed.postcode+', Malaysia' : ', Malaysia';
+    if(parsed.raw) add(parsed.raw+suffix);
+    if(parsed.houseNumber && parsed.street) add(parsed.houseNumber+' '+parsed.street+suffix);
+    if(parsed.street && parsed.postcode) add(parsed.street+', '+parsed.postcode+', Malaysia');
+    if(parsed.houseNumber && parsed.postcode) add(parsed.houseNumber+' '+parsed.postcode+', Malaysia');
+    if(parsed.postcode && !parsed.street && !parsed.houseNumber) add(parsed.postcode+', Malaysia');
+    return queries.slice(0,4);
+  }
+
+  async function lookupAddressCandidates(parsed, signal){
+    const queries=buildAddressQueries(parsed);
+    if(!queries.length) return [];
+    const results=await Promise.all(queries.map(query=>
+      lookup(query,signal,10).catch(error=>{
+        if(error && error.name==='AbortError') throw error;
+        return [];
+      })
+    ));
+    if(signal?.aborted) throw new DOMException('Aborted','AbortError');
+    return dedupeFeatures(results.flat(),parsed);
+  }
+
   function meaningfulTokens(value){
     const stop = new Set([
       'malaysia','kuala','lumpur','wilayah','persekutuan',
-      'jalan','jln','lorong','taman','no','unit'
+      'jalan','jln','lorong','no','unit','lot'
     ]);
     return normalize(value).split(' ').filter(x=>x.length>1 && !stop.has(x));
   }
 
-  function strongMatch(input, feature){
-    const p = feature?.properties || {};
-    const inTokens = meaningfulTokens(input);
-    const outSet = new Set(meaningfulTokens(featureText(feature)));
-    if (!inTokens.length) return false;
+  function scoreFeature(feature, parsed){
+    const p=feature?.properties || {};
+    const featurePostcode=clean(p.postcode);
+    const candidateNumber=numberKey(p.housenumber);
+    const requestedNumber=numberKey(parsed.houseNumber);
+    const requestedPostcode=clean(parsed.postcode);
 
-    const overlap = inTokens.filter(t=>outSet.has(t)).length;
-    const coverageRatio = overlap/Math.min(inTokens.length,6);
-    const inputPostcode = (String(input).match(/\b\d{5}\b/)||[])[0] || '';
-    const featurePostcode = clean(p.postcode);
-    const postcodeMatch = Boolean(inputPostcode && featurePostcode && inputPostcode===featurePostcode);
-    const inputNumber = (normalize(input).match(/^\d+[a-z]?\b/)||[])[0] || '';
-    const featureNumber = normalize(p.housenumber || '');
-    const numberMatch = Boolean(inputNumber && featureNumber && inputNumber===featureNumber);
+    let score=0;
+    if(requestedPostcode){
+      if(featurePostcode===requestedPostcode) score+=120;
+      else if(featurePostcode) score-=150;
+    }
 
-    return (overlap>=2 && coverageRatio>=0.45) ||
-           (postcodeMatch && overlap>=1) ||
-           (numberMatch && overlap>=1);
+    if(requestedNumber){
+      if(candidateNumber===requestedNumber) score+=140;
+      else if(candidateNumber) score-=160;
+      else score-=8;
+    }
+
+    const requestedTokens=meaningfulTokens(parsed.street);
+    const candidateTokens=new Set(meaningfulTokens([
+      p.name,p.street,p.district,p.city,p.county
+    ].filter(Boolean).join(' ')));
+    const overlap=requestedTokens.filter(token=>candidateTokens.has(token)).length;
+    score+=overlap*22;
+    if(requestedTokens.length && overlap===requestedTokens.length) score+=35;
+
+    const requestedStreet=normalize(parsed.street);
+    const candidateStreet=normalize(p.street);
+    if(requestedStreet && candidateStreet &&
+       (candidateStreet===requestedStreet ||
+        candidateStreet.includes(requestedStreet) ||
+        requestedStreet.includes(candidateStreet))) score+=45;
+
+    if(p.housenumber && requestedNumber && candidateNumber===requestedNumber) score+=25;
+    return score;
+  }
+
+  function rankFeatures(features, parsed){
+    let candidates=dedupeFeatures(features,parsed);
+    const requestedPostcode=clean(parsed.postcode);
+    const requestedNumber=numberKey(parsed.houseNumber);
+
+    if(requestedPostcode){
+      const exactPostcode=candidates.filter(f=>clean(f?.properties?.postcode)===requestedPostcode);
+      if(exactPostcode.length) candidates=exactPostcode;
+      else candidates=candidates.filter(f=>!clean(f?.properties?.postcode));
+    }
+
+    if(requestedNumber){
+      const exactNumber=candidates.filter(f=>numberKey(f?.properties?.housenumber)===requestedNumber);
+      if(exactNumber.length) candidates=exactNumber;
+      else candidates=candidates.filter(f=>!clean(f?.properties?.housenumber));
+    }
+
+    return candidates.sort((a,b)=>scoreFeature(b,parsed)-scoreFeature(a,parsed));
+  }
+
+  function usableAddressMatch(feature, parsed){
+    if(!feature) return false;
+    const p=feature?.properties || {};
+    const pc=clean(p.postcode);
+    const requestedPC=clean(parsed.postcode);
+    if(requestedPC && pc && pc!==requestedPC) return false;
+
+    const house=numberKey(parsed.houseNumber);
+    const candidateHouse=numberKey(p.housenumber);
+    if(house && candidateHouse && house!==candidateHouse) return false;
+
+    const streetTokens=meaningfulTokens(parsed.street);
+    const featureTokens=new Set(meaningfulTokens(featureText(feature)));
+    const overlap=streetTokens.filter(token=>featureTokens.has(token)).length;
+    const exactHouse=Boolean(house && candidateHouse && house===candidateHouse);
+    const exactPostcode=Boolean(requestedPC && pc===requestedPC);
+
+    if(house && !parsed.street) return exactHouse && (!requestedPC || exactPostcode);
+    if(parsed.street){
+      const enoughStreetMatch=overlap>=Math.min(2,streetTokens.length);
+      return enoughStreetMatch && (!requestedPC || !pc || exactPostcode);
+    }
+    return exactHouse || (exactPostcode && !house);
+  }
+
+  function bestAddressMatch(features, parsed){
+    return rankFeatures(features,parsed).find(feature=>usableAddressMatch(feature,parsed)) || null;
   }
 
   async function verifyTypedAddress(){
-    const a = clean(address.value);
-    const pc = clean(postcode.value);
-    if (a.length < 5) {
+    const a=clean(address.value);
+    const pc=clean(postcode.value);
+    const parsed=parseAddressInput(a,pc);
+    if(a.length<3 || (!parsed.street && !parsed.houseNumber)){
       showUnverified();
       return false;
     }
 
-    if (verificationController) verificationController.abort();
-    verificationController = new AbortController();
-    showStatus('Checking this address…','checking');
+    if(verificationController) verificationController.abort();
+    verificationController=new AbortController();
+    showStatus('Checking the address and postcode…','checking');
 
-    try {
-      const query = [a,pc,'Malaysia'].filter(Boolean).join(', ');
-      const features = dedupeFeatures(await lookup(query,verificationController.signal,10));
-      const match = features.find(f=>strongMatch(a+' '+pc,f)) || features[0];
-      if (!match) {
+    try{
+      const features=await lookupAddressCandidates(parsed,verificationController.signal);
+      const match=bestAddressMatch(features,parsed);
+      if(!match){
         showUnverified();
         return false;
       }
       markVerified(match);
       return true;
-    } catch(err) {
-      if (err && err.name==='AbortError') return false;
+    }catch(err){
+      if(err && err.name==='AbortError') return false;
       showUnverified();
       return false;
     }
   }
 
   async function searchAddress(){
-    const a = clean(address.value);
-    const pc = clean(postcode.value);
-    const query = [a,pc,'Malaysia'].filter(Boolean).join(', ');
-    if ((a+pc).replace(/\s/g,'').length < 3) {
+    const parsed=parseAddressInput(address.value,postcode.value);
+    if((parsed.raw+parsed.postcode).replace(/\s/g,'').length<3){
       hide();
       return;
     }
 
-    if (controller) controller.abort();
-    controller = new AbortController();
+    if(controller) controller.abort();
+    controller=new AbortController();
 
-    try {
-      const features = dedupeFeatures(await lookup(query,controller.signal,10));
+    try{
+      const features=await lookupAddressCandidates(parsed,controller.signal);
+      const ranked=rankFeatures(features,parsed);
+      const best=bestAddressMatch(ranked,parsed);
 
-      const best = features.find(f=>strongMatch(a+' '+pc,f)) || features[0] || null;
-      const suggestedArea = inferArea(best, a+' '+pc);
-      if (suggestedArea && (!area.value || area.dataset.autoArea==='1')) {
-        setAreaPreview(suggestedArea);
+      if(best){
+        const suggestedArea=inferArea(best,[parsed.raw,parsed.postcode].filter(Boolean).join(' '));
+        if(suggestedArea && (!area.value || area.dataset.autoArea==='1')){
+          setAreaPreview(suggestedArea);
+        }
       }
 
-      render(features);
-    } catch(err) {
-      if (err && err.name==='AbortError') return;
+      render(ranked,parsed);
+    }catch(err){
+      if(err && err.name==='AbortError') return;
       hide();
     }
   }
