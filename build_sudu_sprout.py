@@ -542,8 +542,9 @@ delivery_js = r'''
     if(submit) submit.disabled=false;
   }
 
-  area.addEventListener('change', () => {
+  area.addEventListener('change', e => {
     if(area.value) area.dataset.addressOutside='';
+    if(e && e.isTrusted) area.dataset.autoArea='';
     updateDeliveryEstimate();
   });
   postcode.addEventListener('change', updateDeliveryEstimate);
@@ -634,26 +635,60 @@ address_js = r'''
     ['Kepong', /\bkepong\b/i]
   ];
 
-  function detectArea(feature){
-    const text=featureText(feature);
+  function detectAreaText(text){
+    const value=clean(text);
     for(const [name,pattern] of AREA_PATTERNS){
-      if(pattern.test(text)) return name;
+      if(pattern.test(value)) return name;
     }
     return '';
+  }
+
+  function detectArea(feature){
+    return detectAreaText(featureText(feature));
+  }
+
+  function setAreaPreview(matched){
+    if(!matched) return '';
+    area.dataset.addressOutside='';
+    area.dataset.autoArea='1';
+    if(area.value!==matched){
+      area.value=matched;
+      area.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    return matched;
   }
 
   function setAreaFromFeature(feature){
     const matched=detectArea(feature);
     if(matched){
-      area.dataset.addressOutside='';
-      area.value=matched;
-      area.dispatchEvent(new Event('change',{bubbles:true}));
+      setAreaPreview(matched);
+      area.dataset.autoArea='';
       return matched;
     }
     area.value='';
+    area.dataset.autoArea='';
     area.dataset.addressOutside='1';
     area.dispatchEvent(new Event('change',{bubbles:true}));
     return '';
+  }
+
+  function dedupeFeatures(features){
+    const seen=new Set();
+    const unique=[];
+    for(const feature of malaysiaFeatures(features)){
+      const p=feature?.properties || {};
+      const key=normalize([
+        p.housenumber,
+        p.street || p.name,
+        p.postcode,
+        p.district || p.city || p.county,
+        p.state
+      ].filter(Boolean).join(' '));
+      if(!key || seen.has(key)) continue;
+      seen.add(key);
+      unique.push(feature);
+    }
+    return unique;
   }
 
   function hide(){
@@ -681,9 +716,15 @@ address_js = r'''
   function markDirty(){
     address.dataset.verified='0';
     address.dataset.verificationState='unknown';
-    area.value='';
-    area.dataset.addressOutside='';
-    area.dispatchEvent(new Event('change',{bubbles:true}));
+    const typedArea=detectAreaText(address.value);
+    if(typedArea){
+      setAreaPreview(typedArea);
+    }else{
+      area.value='';
+      area.dataset.autoArea='';
+      area.dataset.addressOutside='';
+      area.dispatchEvent(new Event('change',{bubbles:true}));
+    }
     hideWarning();
     clearStatus();
   }
@@ -725,7 +766,7 @@ address_js = r'''
 
   function render(features){
     hide();
-    const malaysia=malaysiaFeatures(features).slice(0,6);
+    const malaysia=dedupeFeatures(features).slice(0,6);
     if(!malaysia.length) return;
 
     malaysia.forEach(feature => {
@@ -740,7 +781,13 @@ address_js = r'''
       const main=document.createElement('strong');
       main.textContent=[p.housenumber,p.street || p.name].filter(Boolean).join(' ') || line;
       const sub=document.createElement('span');
-      sub.textContent=line+(p.country ? ', '+p.country : '');
+      const subParts=uniqueParts([
+        p.district,
+        p.city || p.county,
+        p.state,
+        p.postcode
+      ].filter(Boolean).map(clean));
+      sub.textContent=subParts.join(', ');
 
       button.append(main,sub);
       button.addEventListener('click',()=>selectFeature(feature));
@@ -826,7 +873,15 @@ address_js = r'''
     controller=new AbortController();
 
     try{
-      const features=await lookup(query,controller.signal,8);
+      const features=dedupeFeatures(await lookup(query,controller.signal,8));
+
+      if(!area.value){
+        const exact=features.find(f=>strongMatch(a+' '+pc,f) && detectArea(f));
+        const fallback=features.find(f=>detectArea(f));
+        const suggestedArea=detectArea(exact || fallback || null);
+        if(suggestedArea) setAreaPreview(suggestedArea);
+      }
+
       render(features);
     }catch(err){
       if(err && err.name==='AbortError') return;
