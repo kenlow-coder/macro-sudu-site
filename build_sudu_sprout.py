@@ -1,4 +1,5 @@
 from pathlib import Path
+import base64
 import re
 
 src = Path("index.html")
@@ -12,6 +13,9 @@ favicon_ico_b64 = Path("assets/brand/sudu-sprout-favicon-ico.b64").read_text(enc
 menu_sprite_b64 = "".join(Path(f"assets/menu-food-sprite-v2.b64.{i:02d}").read_text(encoding="ascii").strip() for i in range(8))
 if len(menu_sprite_b64) != 53556:
     raise RuntimeError("High-resolution menu food sprite is incomplete")
+menu_sprite_bytes = base64.b64decode(menu_sprite_b64, validate=True)
+if b"ftypavif" not in menu_sprite_bytes[:16]:
+    raise RuntimeError("High-resolution menu food sprite is not a valid AVIF image")
 emblem_uri = "data:image/png;base64," + emblem_b64
 wordmark_uri = "data:image/png;base64," + wordmark_b64
 
