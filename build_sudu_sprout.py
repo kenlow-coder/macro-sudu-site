@@ -9,9 +9,9 @@ emblem_b64 = Path("assets/brand/sudu-sprout-emblem.b64").read_text(encoding="asc
 wordmark_b64 = Path("assets/brand/sudu-sprout-wordmark.b64").read_text(encoding="ascii").strip()
 favicon_b64 = Path("assets/brand/sudu-sprout-favicon.b64").read_text(encoding="ascii").strip()
 favicon_ico_b64 = Path("assets/brand/sudu-sprout-favicon-ico.b64").read_text(encoding="ascii").strip()
-menu_sprite_b64 = "".join(Path(f"assets/menu-food-sprite.b64.{i:02d}").read_text(encoding="ascii").strip() for i in range(8))
-if len(menu_sprite_b64) != 38940:
-    raise RuntimeError("Menu food sprite is incomplete")
+menu_sprite_b64 = "".join(Path(f"assets/menu-food-sprite-v2.b64.{i:02d}").read_text(encoding="ascii").strip() for i in range(8))
+if len(menu_sprite_b64) != 53556:
+    raise RuntimeError("High-resolution menu food sprite is incomplete")
 emblem_uri = "data:image/png;base64," + emblem_b64
 wordmark_uri = "data:image/png;base64," + wordmark_b64
 
@@ -1712,9 +1712,9 @@ updated_menu = '''<section id="menu" class="updated-menu-section">
       <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Cajun Chicken in an open sugarcane-fibre tray" style="--photo-position:33.3333% 0%"></div><div class="updated-menu-card-body"><h3>Cajun Chicken</h3><div class="updated-menu-macros"><div><strong>467</strong><span>kcal</span></div><div><strong>53g</strong><span>protein</span></div><div><strong>12g</strong><span>fat</span></div><div><strong>34g</strong><span>carbs</span></div></div></div></article>
       <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Korean Protein Bowl in an open sugarcane-fibre tray" style="--photo-position:66.6667% 0%"></div><div class="updated-menu-card-body"><h3>Korean Protein Bowl</h3><div class="updated-menu-macros"><div><strong>469</strong><span>kcal</span></div><div><strong>39g</strong><span>protein</span></div><div><strong>12g</strong><span>fat</span></div><div><strong>47g</strong><span>carbs</span></div></div></div></article>
       <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Seaweed Prawn Soba Noodles in an open sugarcane-fibre tray" style="--photo-position:100% 0%"></div><div class="updated-menu-card-body"><h3>Seaweed Prawn Soba Noodles</h3><div class="updated-menu-macros"><div><strong>482</strong><span>kcal</span></div><div><strong>54g</strong><span>protein</span></div><div><strong>13g</strong><span>fat</span></div><div><strong>48g</strong><span>carbs</span></div></div></div></article>
-      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Mackerel Fish in an open sugarcane-fibre tray" data-photo-row="three-up" style="--photo-position:0% 100%"></div><div class="updated-menu-card-body"><h3>Mackerel Fish</h3><div class="updated-menu-macros"><div><strong>390</strong><span>kcal</span></div><div><strong>26g</strong><span>protein</span></div><div><strong>10g</strong><span>fat</span></div><div><strong>36g</strong><span>carbs</span></div></div></div></article>
-      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Beef Tacos in an open sugarcane-fibre tray" data-photo-row="three-up" style="--photo-position:50% 100%"></div><div class="updated-menu-card-body"><h3>Beef Tacos</h3><div class="updated-menu-macros"><div><strong>673</strong><span>kcal</span></div><div><strong>67g</strong><span>protein</span></div><div><strong>26g</strong><span>fat</span></div><div><strong>42g</strong><span>carbs</span></div></div></div></article>
-      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Lemon Dill Salmon in an open sugarcane-fibre tray" data-photo-row="three-up" style="--photo-position:100% 100%"></div><div class="updated-menu-card-body"><h3>Lemon Dill Salmon</h3><div class="updated-menu-macros"><div><strong>553</strong><span>kcal</span></div><div><strong>44g</strong><span>protein</span></div><div><strong>23g</strong><span>fat</span></div><div><strong>38g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Mackerel Fish in an open sugarcane-fibre tray" style="--photo-position:0% 100%"></div><div class="updated-menu-card-body"><h3>Mackerel Fish</h3><div class="updated-menu-macros"><div><strong>390</strong><span>kcal</span></div><div><strong>26g</strong><span>protein</span></div><div><strong>10g</strong><span>fat</span></div><div><strong>36g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Beef Tacos in an open sugarcane-fibre tray" style="--photo-position:33.3333% 100%"></div><div class="updated-menu-card-body"><h3>Beef Tacos</h3><div class="updated-menu-macros"><div><strong>673</strong><span>kcal</span></div><div><strong>67g</strong><span>protein</span></div><div><strong>26g</strong><span>fat</span></div><div><strong>42g</strong><span>carbs</span></div></div></div></article>
+      <article class="updated-menu-card"><div class="updated-menu-photo" role="img" aria-label="Overhead view of Lemon Dill Salmon in an open sugarcane-fibre tray" style="--photo-position:66.6667% 100%"></div><div class="updated-menu-card-body"><h3>Lemon Dill Salmon</h3><div class="updated-menu-macros"><div><strong>553</strong><span>kcal</span></div><div><strong>44g</strong><span>protein</span></div><div><strong>23g</strong><span>fat</span></div><div><strong>38g</strong><span>carbs</span></div></div></div></article>
     </div>
     <div class="section-plan-cta"><a class="cta" href="#plans">CUSTOMISE YOUR MEAL PLAN</a></div>
   </div>
@@ -1727,8 +1727,7 @@ s = menu_result[0]
 updated_menu_css = r'''<style>
 .updated-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:28px}
 .updated-menu-card{min-width:0;overflow:hidden;border:1px solid rgba(36,75,53,.13);border-radius:20px;background:#fffdf8;box-shadow:0 10px 30px rgba(32,51,41,.045)}
-.updated-menu-photo{width:100%;aspect-ratio:220/143;background-image:url("data:image/webp;base64,__MENU_SPRITE__");background-size:400% 200%;background-position:var(--photo-position,0% 0%);background-repeat:no-repeat;background-color:#f6f0e5}
-.updated-menu-photo[data-photo-row="three-up"]{background-size:300% 200%}
+.updated-menu-photo{width:100%;aspect-ratio:220/170;background-image:url("data:image/avif;base64,__MENU_SPRITE__");background-size:400% 200%;background-position:var(--photo-position,0% 0%);background-repeat:no-repeat;background-color:#f6f0e5}
 .updated-menu-card-body{padding:18px 16px 16px}
 .updated-menu-card h3{min-height:2.5em;margin:0 0 16px;color:#244b35;text-align:center;font:700 1.15rem/1.25 Georgia,"Times New Roman",serif}
 .updated-menu-macros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
