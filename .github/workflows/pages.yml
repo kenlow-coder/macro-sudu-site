@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Sudu & Sprout site
         run: python build_sudu_sprout.py
+      - name: Add postcode-first Malaysia lookup
+        run: python patch_malaysia_postcode_lookup.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
